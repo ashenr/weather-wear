@@ -23,7 +23,7 @@ A web app that:
 | Layer        | Technology                        |
 |--------------|-----------------------------------|
 | Frontend     | React (with Vite)                 |
-| UI Library   | Chakra UI                         |
+| UI Library   | Chakra UI v3                      |
 | Hosting      | Firebase Hosting                  |
 | Backend      | Firebase Cloud Functions          |
 | Database     | Firestore (region: eur3)          |
@@ -136,15 +136,40 @@ Users can also edit and delete existing wardrobe items.
 ### 2. Weather-Driven Logic Engine
 
 **Data collection:**
-- Fetch hourly forecast from yr.no Locationforecast 2.0 API
-- yr.no returns a timeseries with hourly `instant` data (temp, humidity, wind, pressure) and period summaries (`next_1_hours`, `next_6_hours`) with precipitation and weather symbol codes
+- Fetch hourly forecast from yr.no Locationforecast 2.0 API (`complete` endpoint)
+- yr.no returns a timeseries with:
+
+  - **Instant data** (per-hour point-in-time): `air_temperature`, `relative_humidity`, `dew_point_temperature`, `wind_speed`, `wind_speed_of_gust`, `wind_from_direction`, `air_pressure_at_sea_level`, `cloud_area_fraction` (total, high, medium, low), `fog_area_fraction`, `ultraviolet_index_clear_sky`
+  - **Period summaries** (`next_1_hours`, `next_6_hours`): `precipitation_amount` (+ min/max), `probability_of_precipitation`, `probability_of_thunder`, `symbol_code`; 6-hour periods also include `air_temperature_min`/`air_temperature_max`
+
 - Aggregate hourly data into time periods:
   - Morning (06:00–09:00)
   - Daytime (09:00–15:00)
   - Afternoon (15:00–18:00)
   - Evening (18:00–21:00)
-- For each period, derive: avg temperature, feels-like temperature, total precipitation, avg wind speed, max wind gust, humidity, weather symbol
-- Derive daily summary: min/max temperature, total precipitation, max wind speed
+- For each period, derive:
+
+  - `temp`: average of `air_temperature`
+  - `feelsLike`: calculated using wind chill formula (see below)
+  - `precipitation`: sum of `precipitation_amount` from `next_1_hours`
+  - `precipProbability`: max `probability_of_precipitation` across hours
+  - `wind`: average of `wind_speed`
+  - `windGust`: max of `wind_speed_of_gust`
+  - `humidity`: average of `relative_humidity`
+  - `dewPoint`: average of `dew_point_temperature`
+  - `cloudCover`: average of `cloud_area_fraction`
+  - `symbol`: most frequent `symbol_code` from `next_1_hours`
+
+- Derive daily summary: min/max temperature, total precipitation, max wind speed, avg cloud cover
+- Derive `windWarning`: `true` if max wind speed > 8 m/s (passed to Gemini as supplementary context)
+
+**Feels-like temperature calculation:**
+
+yr.no does not provide a feels-like / wind chill field. We calculate it using the standard Environment Canada wind chill formula:
+- When `air_temperature` < 10°C and `wind_speed` > 1.3 m/s (4.8 km/h):
+  `feelsLike = 13.12 + 0.6215×T - 11.37×V^0.16 + 0.3965×T×V^0.16`
+  where T = air temperature (°C), V = wind speed (km/h, convert from m/s × 3.6)
+- Otherwise: `feelsLike = air_temperature`
 
 **Weather condition classification — the "Oslo Logic":**
 
@@ -152,15 +177,25 @@ Norwegian weather isn't just about temperature. The same -5°C feels completely 
 
 | Condition | Criteria | Layering implication |
 | --- | --- | --- |
-| Dry Cold | Temp < 0°C, low precipitation, low humidity | Insulation priority — down jacket, wool layers |
-| Wet Cold | Temp -5°C to 3°C, rain/sleet, high humidity | Waterproof shell essential, synthetic insulation |
-| Wet Slush/Slaps | Temp 0°C to 5°C, rain/wet snow mix | Waterproof everything, layers for variable temp |
-| Mild Damp | Temp 5°C to 12°C, overcast, light rain possible | Light waterproof layer, single mid-layer |
-| Windy Cold | Any cold temp + wind speed > 8 m/s | Windproof outer, extra face/neck protection |
-| Dry Mild | Temp 10°C to 20°C, low precipitation | Light jacket or sweater only |
-| Warm | Temp > 20°C | Minimal layers |
+| Warm | maxTemp > 20°C | Minimal layers |
+| Dry Mild | minTemp ≥ 10°C, totalPrecipitation < 1mm | Light jacket or sweater only |
+| Dry Cool | minTemp 5–10°C, totalPrecipitation < 1mm | Light jacket, single mid-layer |
+| Windy Cold | minTemp < 5°C, maxWind > 8 m/s | Windproof outer, extra face/neck protection |
+| Wet Slush | minTemp 0–5°C, totalPrecipitation ≥ 2mm | Waterproof everything, layers for variable temp |
+| Wet Cold | minTemp -5–0°C, totalPrecipitation ≥ 1mm, humidity > 80% | Waterproof shell essential, synthetic insulation |
+| Mild Damp | minTemp 5–15°C, totalPrecipitation > 0 | Light waterproof layer, single mid-layer |
+| Dry Cold | minTemp < 0°C, totalPrecipitation < 1mm | Insulation priority — down jacket, wool layers |
+| *(fallback)* | None of the above | Mild Damp |
 
-This classification is passed to Gemini as context alongside the raw weather data, so the AI understands the practical feel of the conditions.
+Rules are evaluated in the order listed above (first match wins). This classification is passed to Gemini as context alongside the raw weather data, so the AI understands the practical feel of the conditions.
+
+**Wind warning flag:** In addition to the primary classification, the system flags `windWarning: true` when `maxWind > 8 m/s` for any condition type (not just Windy Cold). This flag is passed to Gemini alongside the condition type so it can recommend windproof layers even in conditions like Dry Cold or Wet Slush. The flag does not change the primary classification — it's supplementary context.
+
+**Edge case notes:**
+
+- The `wet-cold` upper bound is 0°C (exclusive) to avoid overlap with `wet-slush` (0–5°C)
+- `mild-damp` upper bound is 15°C to cover rainy days above the `dry-cool` range (previously would have fallen through to fallback)
+- Oslo Logic must be unit tested with boundary values before deployment (e.g., minTemp exactly 0°C, precipitation exactly 1mm, wind exactly 8 m/s)
 
 ### 3. Daily Clothing Suggestion
 
@@ -199,13 +234,29 @@ This feedback is stored in Firestore and included in future Gemini prompts so th
 
 - Google sign-in via Firebase Auth
 - Single-user app — the auth is primarily to secure access, not for multi-tenancy
-- Firestore security rules restrict data to the authenticated user
+- Firestore security rules restrict user data to the authenticated user; weather cache is readable by any authenticated user
 
 ---
 
 ## Data Schema (Firestore)
 
 ```
+weatherCache/{date} (top-level collection, doc ID e.g., "2026-03-01")
+  └── { date, fetchedAt,
+        conditionType,        // Oslo Logic classification
+        periods: {
+          morning:   { temp, feelsLike, precipitation, precipProbability,
+                       wind, windGust, humidity, dewPoint, cloudCover, symbol },
+          daytime:   { ... },
+          afternoon: { ... },
+          evening:   { ... }
+        },
+        windWarning,              // boolean — true if maxWind > 8 m/s
+        summary: { minTemp, maxTemp,
+                   totalPrecipitation, maxWind, avgCloudCover },
+        rawTimeseries: [ ... ] // optional: raw hourly data
+      }
+
 users/{userId}
   │
   ├── profile (document)
@@ -222,21 +273,6 @@ users/{userId}
   │           notes,
   │           extractedByAI,        // boolean — true if from URL crawl
   │           createdAt, updatedAt }
-  │
-  ├── weatherCache/{date} (subcollection, doc ID e.g., "2026-03-01")
-  │     └── { date, fetchedAt,
-  │           conditionType,        // Oslo Logic classification
-  │           periods: {
-  │             morning:   { temp, feelsLike, precipitation,
-  │                          wind, windGust, humidity, symbol },
-  │             daytime:   { ... },
-  │             afternoon: { ... },
-  │             evening:   { ... }
-  │           },
-  │           summary: { minTemp, maxTemp,
-  │                      totalPrecipitation, maxWind },
-  │           rawTimeseries: [ ... ] // optional: raw hourly data
-  │         }
   │
   ├── suggestions/{date} (subcollection, doc ID e.g., "2026-03-01")
   │     └── { date, generatedAt,
@@ -275,7 +311,7 @@ Pre-fetches and caches the day's weather forecast.
   2. Filter timeseries to today's hours (06:00–21:00)
   3. Aggregate into 4 time periods (morning, daytime, afternoon, evening)
   4. Classify condition type using Oslo Logic rules
-  5. Write to `users/{userId}/weatherCache/{date}`
+  5. Write to `weatherCache/{date}` (top-level collection)
 - **Headers:** `User-Agent: SmartDisplay/1.0 github.com/ashenw/smart-display`
 - **Error handling:** Retry once on failure; log error if retry fails
 
@@ -286,9 +322,9 @@ Returns today's clothing suggestion, generating it if not cached.
 - **Trigger:** `onCall` (authenticated)
 - **Input:** none (uses authenticated user's ID)
 - **Process:**
-  1. Check `suggestions/{today}` — return cached if exists
-  2. Read `weatherCache/{today}` — if missing, fetch weather on-demand
-  3. Read all docs from `wardrobe/` subcollection
+  1. Check `users/{userId}/suggestions/{today}` — return cached if exists
+  2. Read `weatherCache/{today}` (top-level) — if missing, fetch weather on-demand
+  3. Read all docs from `users/{userId}/wardrobe/` subcollection
   4. Read recent `feedback/` docs (last 14 days)
   5. Build Gemini prompt (see Prompt Engineering section)
   6. Call Gemini API
@@ -358,8 +394,8 @@ Records the user's daily outfit feedback.
   }
   ```
 - **Process:**
-  1. Read `weatherCache/{date}` to snapshot weather conditions
-  2. Write to `feedback/{date}`
+  1. Read `weatherCache/{date}` (top-level) to snapshot weather conditions
+  2. Write to `users/{userId}/feedback/{date}`
 - **Response:** `{ "success": true }`
 
 ---
@@ -527,20 +563,43 @@ Important:
 - **Activity-based suggestions** — input daily plans (outdoor activity, office, commute) to refine recommendations
 - **Full outfit suggestions** — expand beyond outerwear to suggest complete outfits (tops, trousers, shoes)
 - **Multiple users** — support household members with separate wardrobes
+- **Gemini API rate limiting & cost controls** — per-user daily caps on suggestion regenerations (e.g., max 3/day) and product URL extractions (e.g., max 10/hour); track and alert on monthly Gemini API spend
 
 ---
 
 ## External API Notes
 
 ### yr.no Locationforecast 2.0
+
 - Endpoint: `https://api.met.no/weatherapi/locationforecast/2.0/complete`
 - Oslo coordinates: lat=59.9139, lon=10.7522
-- Returns hourly timeseries with `instant` parameters (temp, humidity, wind, pressure) and period summaries (`next_1_hours`, `next_6_hours`) with precipitation amount and weather symbol codes
+- We use the `complete` endpoint (not `compact`) to access all available parameters
+- **Instant parameters** (per-hour, point-in-time):
+  - `air_temperature` (°C) — at 2m above ground
+  - `relative_humidity` (%) — at 2m above ground
+  - `dew_point_temperature` (°C) — at 2m above ground
+  - `wind_speed` (m/s) — at 10m, 10-min average
+  - `wind_speed_of_gust` (m/s) — max gust at 10m
+  - `wind_from_direction` (degrees) — 0° = north, 90° = east
+  - `air_pressure_at_sea_level` (hPa)
+  - `cloud_area_fraction` (%) — total cloud cover
+  - `cloud_area_fraction_high/medium/low` (%) — by altitude band
+  - `fog_area_fraction` (%)
+  - `ultraviolet_index_clear_sky` (0–11+)
+- **Period summaries** (`next_1_hours`, `next_6_hours`):
+  - `precipitation_amount` (mm) — expected precipitation (+ `_min`, `_max` variants)
+  - `probability_of_precipitation` (%)
+  - `probability_of_thunder` (%)
+  - `symbol_code` — weather icon identifier (e.g., `cloudy`, `lightrainshowers_day`)
+  - `air_temperature_min/max` (°C) — only in `next_6_hours`
+- Note: `next_1_hours` summaries are unavailable beyond 60-hour forecast range
 - Requires `User-Agent` header (e.g., `SmartDisplay/1.0 github.com/ashenw/smart-display`)
-- Terms: https://developer.yr.no/doc/TermsOfService/
+- Must respect `Expires` and `Last-Modified` headers; use `If-Modified-Since` for conditional requests
+- Terms: <https://developer.yr.no/doc/TermsOfService/>
 - Free, no API key required
 
 ### Google Gemini API
+
 - Accessed via Firebase AI / Vertex AI SDK or `@google/generative-ai` package
 - API key stored in Firebase environment config / Secret Manager
 - Used for two distinct tasks: product data extraction (onboarding) and outfit recommendation (daily suggestion)
