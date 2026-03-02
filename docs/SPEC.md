@@ -2,7 +2,7 @@
 
 ## Overview
 
-Smart Display is a personal clothing suggestion app that recommends outerwear and layering choices each morning based on the full-day weather forecast in Oslo, Norway. Built as a hobby project for single-user use.
+Smart Display is a personal clothing suggestion app that recommends outerwear and layering choices each morning based on the full-day weather forecast in Oslo, Norway. Designed for single-user use.
 
 ### Problem Statement
 
@@ -564,6 +564,7 @@ Important:
 - **Full outfit suggestions** — expand beyond outerwear to suggest complete outfits (tops, trousers, shoes)
 - **Multiple users** — support household members with separate wardrobes
 - **Gemini API rate limiting & cost controls** — per-user daily caps on suggestion regenerations (e.g., max 3/day) and product URL extractions (e.g., max 10/hour); track and alert on monthly Gemini API spend
+- **Comfort profile (preference learning)** — aggregate feedback into a structured user comfort profile (temperature offset, per-condition warmth bias, wind sensitivity) instead of passing raw feedback entries to Gemini; update profile after each feedback submission using exponential moving average so recent feedback weighs more
 
 ---
 

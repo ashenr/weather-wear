@@ -8,7 +8,7 @@
 | Backend integration | Jest + firebase-functions-test + emulators | Tests Cloud Functions with real Firestore reads/writes against emulator |
 | Frontend components | Vitest + React Testing Library | Vitest is Vite-native (shares config/transforms); RTL tests user behavior, not implementation |
 | Frontend data layer | Vitest | Same runner as component tests; mock Firebase SDK |
-| E2E | Manual checklists (deferred) | Single-user hobby project — structured manual testing is sufficient for now |
+| E2E | Manual checklists (deferred) | Structured manual testing is sufficient for this single-user application |
 
 ## Dependencies
 
