@@ -431,6 +431,64 @@ firebase emulators:exec --only firestore,auth \
 
 ---
 
+## Emulator Test Data
+
+The seed script at `scripts/seed-emulator.mjs` populates the Firestore emulator with realistic Oslo weather, a full wardrobe, and a week of feedback history for manual and end-to-end testing.
+
+### Running the seed
+
+```bash
+# Terminal 1: start emulators
+./emulators.sh
+
+# Terminal 2: seed data (clears existing wardrobe / weatherCache / feedback first)
+node scripts/seed-emulator.mjs
+```
+
+Dates are computed dynamically relative to today in the `Europe/Oslo` timezone — the script is safe to re-run at any time.
+
+### What gets seeded
+
+#### Wardrobe (8 items with stable IDs)
+
+| ID | Name | Category | Warmth | Waterproof | Windproof |
+| -- | ---- | -------- | ------ | ---------- | --------- |
+| `item-jacket-01` | Arc'teryx Beta AR | jacket | 4 | water-resistant | yes |
+| `item-jacket-02` | Norrøna Falketind Gore-Tex | jacket | 3 | yes | yes |
+| `item-fleece-01` | Patagonia R1 Fleece | fleece | 3 | no | no |
+| `item-base-01` | Icebreaker Merino 200 | base-layer | 2 | no | no |
+| `item-sweater-01` | Uniqlo Extra Fine Merino | sweater | 3 | no | no |
+| `item-hat-01` | Merino Wool Beanie | hat | 2 | no | no |
+| `item-gloves-01` | Hestra Waterproof Gloves | gloves | 3 | water-resistant | yes |
+| `item-scarf-01` | Merino Wool Scarf | scarf | 2 | no | no |
+
+#### Weather cache (8 days, today → 7 days ago)
+
+| Offset | Condition | Key characteristics |
+| ------ | --------- | ------------------- |
+| today | `wet-cold` | −2°C min, 3.5mm rain, sleet |
+| −1 day | `dry-cold` | −4°C min, 0.3mm, clear |
+| −2 days | `windy-cold` | −1°C min, 15 m/s gusts, wind warning |
+| −3 days | `wet-slush` | 2°C min, 4.2mm rain |
+| −4 days | `dry-cool` | 6°C min, 0.2mm, mostly sunny |
+| −5 days | `mild-damp` | 7°C min, 1.8mm drizzle |
+| −6 days | `dry-cold` | −6°C min, 0mm, clear |
+| −7 days | `wet-cold` | −3°C min, 2.5mm sleet |
+
+#### Feedback (7 entries, yesterday → 7 days ago)
+
+Ratings span the full comfort range (`slightly-cold`, `just-right`, `slightly-warm`) across different condition types, giving Gemini enough history to derive a comfort tendency. All `itemsWorn` references use the stable wardrobe item IDs above.
+
+### Auth
+
+The script auto-detects the user ID from the Auth emulator (first account found). Sign in to the app at `http://localhost:5173` before running the seed, or pass a specific UID explicitly:
+
+```bash
+node scripts/seed-emulator.mjs --uid <userId>
+```
+
+---
+
 ## Manual Testing
 
 ### Structured Checklists
