@@ -1,6 +1,7 @@
 import { Button, Flex, Heading, HStack, Link, Text } from '@chakra-ui/react'
 import { Link as RouterLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { APP_NAME } from '../config'
 
 function NavLink({ to, label }: { to: string; label: string }) {
   const { pathname } = useLocation()
@@ -35,7 +36,7 @@ export function Header() {
       justify="space-between"
     >
       <HStack gap={6}>
-        <Heading size="md">Smart Display</Heading>
+        <Heading size="md">{APP_NAME}</Heading>
         {user && (
           <HStack gap={4} hideBelow="md">
             <NavLink to="/" label="Dashboard" />
