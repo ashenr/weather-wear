@@ -12,7 +12,7 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { ItemCard } from '../components/wardrobe/ItemCard'
-import { FilterBar, type SortOption } from '../components/wardrobe/FilterBar'
+import { FilterBar, type SortOption, type CategoryFilter } from '../components/wardrobe/FilterBar'
 import { getWardrobeItems } from '../lib/wardrobe'
 import { useAuth } from '../contexts/AuthContext'
 import type { WardrobeItem } from '../types/wardrobe'
@@ -24,7 +24,7 @@ export function WardrobePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
-  const [category, setCategory] = useState('all')
+  const [category, setCategory] = useState<CategoryFilter>('all')
   const [sort, setSort] = useState<SortOption>('recent')
 
   useEffect(() => {
@@ -54,18 +54,18 @@ export function WardrobePage() {
     }
 
     switch (sort) {
-      case 'recent':
-        result.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis())
-        break
-      case 'name':
-        result.sort((a, b) => a.name.localeCompare(b.name))
-        break
-      case 'warmth':
-        result.sort((a, b) => b.warmthLevel - a.warmthLevel)
-        break
-      case 'category':
-        result.sort((a, b) => a.category.localeCompare(b.category))
-        break
+    case 'recent':
+      result.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis())
+      break
+    case 'name':
+      result.sort((a, b) => a.name.localeCompare(b.name))
+      break
+    case 'warmth':
+      result.sort((a, b) => b.warmthLevel - a.warmthLevel)
+      break
+    case 'category':
+      result.sort((a, b) => a.category.localeCompare(b.category))
+      break
     }
 
     return result
