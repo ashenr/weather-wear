@@ -68,6 +68,7 @@ export function aggregateForDate(
       return hour >= period.startHour && hour < period.endHour
     })
 
+    // TODO: Revisit whether empty periods should be synthesized here or excluded from summary math.
     if (entries.length === 0) {
       periods.push({
         name: period.name,
@@ -93,6 +94,7 @@ export function aggregateForDate(
     const windGusts: number[] = []
 
     for (const entry of entries) {
+      // TODO: Verify that falling back to next_6_hours cannot double-count precipitation across adjacent entries.
       const hourly = entry.data.next_1_hours ?? entry.data.next_6_hours
       if (hourly) {
         precipAmounts.push(hourly.details.precipitation_amount)

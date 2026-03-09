@@ -15,6 +15,7 @@ function getTodayOslo(): string {
 export const fetchWeather = onCall(
   {region: 'europe-west1'},
   async () => {
+    // TODO: Require authenticated callers before allowing weather refreshes.
     const db = getFirestore()
     const today = getTodayOslo()
     logger.info(`Fetching weather for ${today}`)
