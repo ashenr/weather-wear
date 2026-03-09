@@ -11,13 +11,12 @@ import {
   Tabs,
   Text,
 } from '@chakra-ui/react'
-import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { ItemForm } from '../components/wardrobe/ItemForm'
 import { addWardrobeItem } from '../lib/wardrobe'
 import { crawlProductUrl } from '../lib/onboarding'
 import { toaster } from '../components/ui/toaster'
 import { useAuth } from '../contexts/AuthContext'
-import { storage } from '../lib/firebase'
+import { uploadPhoto } from '../lib/photos'
 import type { ItemFormValues } from '../components/wardrobe/ItemForm'
 import type { WardrobeCategory, WarmthLevel, WaterproofLevel } from '../types/wardrobe'
 import type { ExtractedItem } from '../lib/onboarding'
@@ -79,23 +78,6 @@ export function AddItemPage() {
     }
   }
 
-  const uploadPhoto = (file: File, userId: string): Promise<{ photoUrl: string; photoPath: string }> => {
-    return new Promise((resolve, reject) => {
-      const path = `users/${userId}/wardrobe/${crypto.randomUUID()}/photo.jpg`
-      const fileRef = storageRef(storage, path)
-      const task = uploadBytesResumable(fileRef, file)
-      task.on(
-        'state_changed',
-        (snap) => setUploadProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
-        reject,
-        async () => {
-          const photoUrl = await getDownloadURL(task.snapshot.ref)
-          resolve({ photoUrl, photoPath: path })
-        },
-      )
-    })
-  }
-
   const hasPartialExtraction = extracted !== null && (!extracted.name || !extracted.category)
 
   const getFormDefaults = (): Partial<ItemFormValues> | undefined => {
@@ -122,7 +104,7 @@ export function AddItemPage() {
       let photoPath: string | undefined
 
       if (selectedPhotoFile) {
-        const result = await uploadPhoto(selectedPhotoFile, user.uid)
+        const result = await uploadPhoto(selectedPhotoFile, user.uid, setUploadProgress)
         photoUrl = result.photoUrl
         photoPath = result.photoPath
       }

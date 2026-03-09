@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Box, HStack, Input, NativeSelect, Tabs } from '@chakra-ui/react'
+import type { WardrobeCategory } from '../../types/wardrobe'
 
 export type SortOption = 'recent' | 'name' | 'warmth' | 'category'
+export type CategoryFilter = WardrobeCategory | 'all'
 
 const CATEGORIES = [
   { value: 'all', label: 'All' },
@@ -17,8 +19,8 @@ const CATEGORIES = [
 ]
 
 interface FilterBarProps {
-  category: string
-  onCategoryChange: (value: string) => void
+  category: CategoryFilter
+  onCategoryChange: (value: CategoryFilter) => void
   sort: SortOption
   onSortChange: (value: SortOption) => void
   onSearchChange: (value: string) => void
@@ -68,7 +70,7 @@ export function FilterBar({
 
       <Tabs.Root
         value={category}
-        onValueChange={(e) => onCategoryChange(e.value)}
+        onValueChange={(e) => onCategoryChange(e.value as CategoryFilter)}
         variant="line"
         size="sm"
       >

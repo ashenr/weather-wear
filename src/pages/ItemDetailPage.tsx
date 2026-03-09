@@ -12,12 +12,13 @@ import {
   Center,
   Text,
 } from '@chakra-ui/react'
-import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage'
+import { ref as storageRef, deleteObject } from 'firebase/storage'
 import { ItemForm } from '../components/wardrobe/ItemForm'
 import { getWardrobeItem, updateWardrobeItem, deleteWardrobeItem } from '../lib/wardrobe'
 import { toaster } from '../components/ui/toaster'
 import { useAuth } from '../contexts/AuthContext'
 import { storage } from '../lib/firebase'
+import { uploadPhoto } from '../lib/photos'
 import type { WardrobeItem } from '../types/wardrobe'
 import type { ItemFormValues } from '../components/wardrobe/ItemForm'
 
@@ -47,23 +48,6 @@ export function ItemDetailPage() {
         navigate('/wardrobe')
       })
   }, [user, id, navigate])
-
-  const uploadPhoto = (file: File, userId: string): Promise<{ photoUrl: string; photoPath: string }> => {
-    return new Promise((resolve, reject) => {
-      const path = `users/${userId}/wardrobe/${crypto.randomUUID()}/photo.jpg`
-      const fileRef = storageRef(storage, path)
-      const task = uploadBytesResumable(fileRef, file)
-      task.on(
-        'state_changed',
-        (snap) => setUploadProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
-        reject,
-        async () => {
-          const photoUrl = await getDownloadURL(task.snapshot.ref)
-          resolve({ photoUrl, photoPath: path })
-        },
-      )
-    })
-  }
 
   const handleSave = async (values: ItemFormValues) => {
     if (!user || !id || !item) return

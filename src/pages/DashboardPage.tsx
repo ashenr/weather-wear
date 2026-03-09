@@ -6,7 +6,6 @@ import {
   Box,
   Button,
   Heading,
-  Link,
   Separator,
   Skeleton,
   Text,
@@ -135,13 +134,11 @@ export function DashboardPage() {
               <VStack gap={3} align="flex-start">
                 <Text color="fg.muted">{suggestionError}</Text>
                 {suggestionError.includes('wardrobe') ? (
-                  <Link asChild>
+                  <Button size="sm" colorPalette="blue" asChild>
                     <RouterLink to="/wardrobe/add">
-                      <Button size="sm" colorPalette="blue">
-                        Add Items to Wardrobe
-                      </Button>
+                      Add Items to Wardrobe
                     </RouterLink>
-                  </Link>
+                  </Button>
                 ) : (
                   <Button size="sm" variant="outline" onClick={loadSuggestion}>
                     Retry Suggestion
