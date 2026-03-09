@@ -26,7 +26,7 @@ function getDateNDaysAgo(n: number): string {
 }
 
 export const getDailySuggestion = onCall(
-  {region: 'europe-west1', secrets: [geminiApiKey]},
+  {region: 'europe-west1', secrets: [geminiApiKey], timeoutSeconds: 60},
   async (request) => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Authentication required')
@@ -52,7 +52,11 @@ export const getDailySuggestion = onCall(
     let weatherSnap = await weatherRef.get()
     if (!weatherSnap.exists) {
       logger.info('Weather cache missing — fetching on demand')
-      await fetchAndCacheWeather()
+      try {
+        await fetchAndCacheWeather()
+      } catch (err) {
+        logger.warn('On-demand weather fetch failed', err)
+      }
       weatherSnap = await weatherRef.get()
     }
     if (!weatherSnap.exists) {
@@ -162,8 +166,12 @@ export const getDailySuggestion = onCall(
 
     // 6. Cache if not a fallback
     if (!isFallback) {
-      await suggestionRef.set(doc)
-      logger.info(`Suggestion cached for ${userId} on ${today}`)
+      try {
+        await suggestionRef.set(doc)
+        logger.info(`Suggestion cached for ${userId} on ${today}`)
+      } catch (err) {
+        logger.warn('Failed to cache suggestion — returning result without caching', err)
+      }
     }
 
     return doc

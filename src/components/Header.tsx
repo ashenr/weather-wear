@@ -37,7 +37,7 @@ export function Header() {
       <HStack gap={6}>
         <Heading size="md">Smart Display</Heading>
         {user && (
-          <HStack gap={4}>
+          <HStack gap={4} hideBelow="md">
             <NavLink to="/" label="Dashboard" />
             <NavLink to="/wardrobe" label="Wardrobe" />
             <NavLink to="/feedback" label="Log Feedback" />

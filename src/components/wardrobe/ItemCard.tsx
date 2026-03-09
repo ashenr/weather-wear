@@ -1,4 +1,4 @@
-import { Badge, Box, HStack, Text, VStack } from '@chakra-ui/react'
+import { Badge, Box, HStack, Image, Text, VStack } from '@chakra-ui/react'
 import type { WardrobeItem } from '../../types/wardrobe'
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -51,13 +51,22 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
     <Box
       borderWidth="1px"
       borderRadius="lg"
-      p={4}
+      overflow="hidden"
       cursor="pointer"
       _hover={{ borderColor: 'blue.400', shadow: 'sm' }}
       onClick={onClick}
       transition="all 0.15s"
     >
-      <VStack align="stretch" gap={3}>
+      {item.photoUrl && (
+        <Image
+          src={item.photoUrl}
+          alt={item.name}
+          h="140px"
+          w="full"
+          objectFit="cover"
+        />
+      )}
+      <VStack align="stretch" gap={3} p={4}>
         <HStack justify="space-between" align="flex-start">
           <Text fontWeight="semibold" lineClamp={2}>
             {item.name}

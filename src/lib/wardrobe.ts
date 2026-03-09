@@ -7,8 +7,10 @@ import {
   getDoc,
   doc,
   serverTimestamp,
+  deleteField,
 } from 'firebase/firestore'
-import { db } from './firebase'
+import { ref, deleteObject } from 'firebase/storage'
+import { db, storage } from './firebase'
 import type { WardrobeItem, WardrobeItemInput } from '../types/wardrobe'
 
 export async function addWardrobeItem(
@@ -17,7 +19,7 @@ export async function addWardrobeItem(
 ): Promise<string> {
   const ref = collection(db, 'users', userId, 'wardrobe')
   const docRef = await addDoc(ref, {
-    ...item,
+    ...Object.fromEntries(Object.entries(item).filter(([, v]) => v !== undefined)),
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   })
@@ -30,8 +32,11 @@ export async function updateWardrobeItem(
   updates: Partial<WardrobeItemInput>
 ): Promise<void> {
   const ref = doc(db, 'users', userId, 'wardrobe', itemId)
+  const cleanUpdates = Object.fromEntries(
+    Object.entries(updates).map(([k, v]) => [k, v === undefined ? deleteField() : v])
+  )
   await updateDoc(ref, {
-    ...updates,
+    ...cleanUpdates,
     updatedAt: serverTimestamp(),
   })
 }
@@ -40,8 +45,19 @@ export async function deleteWardrobeItem(
   userId: string,
   itemId: string
 ): Promise<void> {
-  const ref = doc(db, 'users', userId, 'wardrobe', itemId)
-  await deleteDoc(ref)
+  const docRef = doc(db, 'users', userId, 'wardrobe', itemId)
+  const snap = await getDoc(docRef)
+  if (snap.exists()) {
+    const photoPath = snap.data().photoPath as string | undefined
+    if (photoPath) {
+      try {
+        await deleteObject(ref(storage, photoPath))
+      } catch {
+        // photo may already be gone — ignore
+      }
+    }
+  }
+  await deleteDoc(docRef)
 }
 
 export async function getWardrobeItems(userId: string): Promise<WardrobeItem[]> {

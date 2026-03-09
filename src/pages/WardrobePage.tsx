@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Box,
@@ -12,6 +12,7 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { ItemCard } from '../components/wardrobe/ItemCard'
+import { FilterBar, type SortOption, type CategoryFilter } from '../components/wardrobe/FilterBar'
 import { getWardrobeItems } from '../lib/wardrobe'
 import { useAuth } from '../contexts/AuthContext'
 import type { WardrobeItem } from '../types/wardrobe'
@@ -22,6 +23,9 @@ export function WardrobePage() {
   const [items, setItems] = useState<WardrobeItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const [category, setCategory] = useState<CategoryFilter>('all')
+  const [sort, setSort] = useState<SortOption>('recent')
 
   useEffect(() => {
     if (!user) return
@@ -30,6 +34,42 @@ export function WardrobePage() {
       .catch(() => setError('Failed to load wardrobe items.'))
       .finally(() => setLoading(false))
   }, [user])
+
+  const filteredItems = useMemo(() => {
+    let result = [...items]
+
+    if (category !== 'all') {
+      result = result.filter((item) => item.category === category)
+    }
+
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      result = result.filter(
+        (item) =>
+          item.name.toLowerCase().includes(q) ||
+          item.brand.toLowerCase().includes(q) ||
+          item.material.toLowerCase().includes(q) ||
+          item.notes.toLowerCase().includes(q),
+      )
+    }
+
+    switch (sort) {
+    case 'recent':
+      result.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis())
+      break
+    case 'name':
+      result.sort((a, b) => a.name.localeCompare(b.name))
+      break
+    case 'warmth':
+      result.sort((a, b) => b.warmthLevel - a.warmthLevel)
+      break
+    case 'category':
+      result.sort((a, b) => a.category.localeCompare(b.category))
+      break
+    }
+
+    return result
+  }, [items, search, category, sort])
 
   return (
     <Box maxW="900px" mx="auto" px={4} py={6}>
@@ -64,15 +104,30 @@ export function WardrobePage() {
           </VStack>
         </Center>
       ) : (
-        <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} gap={4}>
-          {items.map((item) => (
-            <ItemCard
-              key={item.id}
-              item={item}
-              onClick={() => navigate(`/wardrobe/${item.id}`)}
-            />
-          ))}
-        </SimpleGrid>
+        <>
+          <FilterBar
+            category={category}
+            onCategoryChange={setCategory}
+            sort={sort}
+            onSortChange={setSort}
+            onSearchChange={setSearch}
+          />
+          {filteredItems.length === 0 ? (
+            <Center py={12}>
+              <Text color="fg.muted">No items match your search.</Text>
+            </Center>
+          ) : (
+            <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} gap={4}>
+              {filteredItems.map((item) => (
+                <ItemCard
+                  key={item.id}
+                  item={item}
+                  onClick={() => navigate(`/wardrobe/${item.id}`)}
+                />
+              ))}
+            </SimpleGrid>
+          )}
+        </>
       )}
     </Box>
   )

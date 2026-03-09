@@ -12,10 +12,13 @@ import {
   Center,
   Text,
 } from '@chakra-ui/react'
+import { ref as storageRef, deleteObject } from 'firebase/storage'
 import { ItemForm } from '../components/wardrobe/ItemForm'
 import { getWardrobeItem, updateWardrobeItem, deleteWardrobeItem } from '../lib/wardrobe'
 import { toaster } from '../components/ui/toaster'
 import { useAuth } from '../contexts/AuthContext'
+import { storage } from '../lib/firebase'
+import { uploadPhoto } from '../lib/photos'
 import type { WardrobeItem } from '../types/wardrobe'
 import type { ItemFormValues } from '../components/wardrobe/ItemForm'
 
@@ -29,6 +32,9 @@ export function ItemDetailPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null)
+  const [photoRemoved, setPhotoRemoved] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
 
   useEffect(() => {
     if (!user || !id) return
@@ -44,10 +50,35 @@ export function ItemDetailPage() {
   }, [user, id, navigate])
 
   const handleSave = async (values: ItemFormValues) => {
-    if (!user || !id) return
+    if (!user || !id || !item) return
     setIsSaving(true)
+    setUploadProgress(0)
     try {
-      await updateWardrobeItem(user.uid, id, values)
+      let photoUrl = item.photoUrl
+      let photoPath = item.photoPath
+
+      if (selectedPhotoFile) {
+        const result = await uploadPhoto(selectedPhotoFile, user.uid)
+        // Delete old photo from storage after new upload succeeds
+        if (item.photoPath) {
+          try { await deleteObject(storageRef(storage, item.photoPath)) } catch (err) {
+            if ((err as { code?: string }).code !== 'storage/object-not-found') throw err
+          }
+        }
+        photoUrl = result.photoUrl
+        photoPath = result.photoPath
+      } else if (photoRemoved) {
+        // Delete old photo from storage if it exists
+        if (item.photoPath) {
+          try { await deleteObject(storageRef(storage, item.photoPath)) } catch (err) {
+            if ((err as { code?: string }).code !== 'storage/object-not-found') throw err
+          }
+        }
+        photoUrl = ''
+        photoPath = undefined
+      }
+
+      await updateWardrobeItem(user.uid, id, { ...values, photoUrl, photoPath })
       toaster.create({
         title: 'Item updated',
         description: `${values.name} has been saved.`,
@@ -62,6 +93,7 @@ export function ItemDetailPage() {
       })
     } finally {
       setIsSaving(false)
+      setUploadProgress(0)
     }
   }
 
@@ -173,6 +205,12 @@ export function ItemDetailPage() {
         onSubmit={handleSave}
         isLoading={isSaving}
         submitLabel="Save Changes"
+        existingPhotoUrl={item.photoUrl || undefined}
+        onPhotoFileChange={(file) => {
+          setSelectedPhotoFile(file)
+          setPhotoRemoved(file === null)
+        }}
+        uploadProgress={uploadProgress}
       />
     </Box>
   )

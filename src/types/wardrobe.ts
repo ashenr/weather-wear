@@ -27,6 +27,7 @@ export interface WardrobeItem {
   windproof: boolean
   temperatureRange: { min: number; max: number }
   photoUrl: string
+  photoPath?: string
   sourceUrl: string
   notes: string
   extractedByAI: boolean
