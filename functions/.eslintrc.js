@@ -22,6 +22,8 @@ module.exports = {
     '/lib/**/*', // Ignore built files.
     '/generated/**/*', // Ignore generated files.
     '.eslintrc.js', // Not part of the TS project.
+    'test/**/*', // Test files use a separate vitest config.
+    'vitest.config.ts', // Not part of the main TS project.
   ],
   plugins: [
     '@typescript-eslint',

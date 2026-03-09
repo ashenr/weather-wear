@@ -184,14 +184,14 @@ export const submitFeedback = onCall(
 
 ## Verification Checklist
 
-- [ ] Can submit feedback selecting worn items and comfort rating
-- [ ] Feedback is stored correctly in Firestore with weather snapshot
-- [ ] Can update feedback for a date that already has feedback
-- [ ] Feedback page loads existing feedback for editing
-- [ ] Past 14 days of feedback appear in the Gemini prompt
-- [ ] Comfort tendency is derived correctly from feedback distribution
-- [ ] Suggestions change meaningfully when feedback indicates cold/warm tendency
-- [ ] Date selector allows going back up to 7 days
-- [ ] Empty feedback state (no wardrobe items) shows helpful message
-- [ ] Build succeeds for both frontend and functions
-- [ ] Check Firebase Cloud Functions logs for Firestore index errors — feedback queries (last 14 days, ordered by date) may require a composite index. Follow the link in the error message to create it
+- [x] Can submit feedback selecting worn items and comfort rating
+- [x] Feedback is stored correctly in Firestore with weather snapshot
+- [x] Can update feedback for a date that already has feedback
+- [x] Feedback page loads existing feedback for editing
+- [x] Past 14 days of feedback appear in the Gemini prompt
+- [x] Comfort tendency is derived correctly from feedback distribution
+- [ ] Suggestions change meaningfully when feedback indicates cold/warm tendency (verify with accumulated live data)
+- [x] Date selector allows going back up to 7 days
+- [x] Empty feedback state (no wardrobe items) shows helpful message
+- [x] Build succeeds for both frontend and functions
+- [x] Check Firebase Cloud Functions logs for Firestore index errors — no index errors observed in live deployment; Firestore auto-indexes handle the `date >= cutoff + orderBy date desc` query on the feedback subcollection

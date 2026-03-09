@@ -39,7 +39,7 @@ export function SuggestionCard({ suggestion }: SuggestionCardProps) {
     <VStack align="stretch" gap={4}>
       <HStack justify="space-between">
         <Text fontWeight="bold" fontSize="lg">
-          Today's Outfit
+          Today&apos;s Outfit
         </Text>
         {isFallback && (
           <Badge colorPalette="orange" variant="subtle">

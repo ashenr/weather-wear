@@ -66,30 +66,34 @@ functions/
       osloLogic.ts
       aggregate.ts
       ...
+    feedback/
+      validateInput.ts   ← extracted validators (unit-tested)
+      submitFeedback.ts
+      types.ts
   test/
     unit/
       weather/
-        osloLogic.test.ts
-        aggregate.test.ts
-        feelsLike.test.ts
+        osloLogic.test.ts          ✓ done (45 tests)
+        aggregate.test.ts          ✓ done (26 tests)
+        feelsLike.test.ts          ✓ done (14 tests)
       suggestion/
-        buildPrompt.test.ts
-        validateResponse.test.ts
+        buildPrompt.test.ts        ✓ done (16 tests)
+        validateResponse.test.ts   ✓ done (18 tests)
       onboarding/
-        ssrf.test.ts
-        scraper.test.ts
-        validateExtraction.test.ts
+        ssrf.test.ts               ✓ done (15 tests)
+        scraper.test.ts            ✓ done (15 tests)
+        validateExtraction.test.ts ✓ done (21 tests)
       feedback/
-        deriveComfortTendency.test.ts
+        validateInput.test.ts      ✓ done (42 tests)
     integration/
       weather/
-        fetchWeather.test.ts
+        fetchWeather.test.ts       TODO
       suggestion/
-        getDailySuggestion.test.ts
+        getDailySuggestion.test.ts TODO
       onboarding/
-        crawlProductUrl.test.ts
+        crawlProductUrl.test.ts    TODO
       feedback/
-        submitFeedback.test.ts
+        submitFeedback.test.ts     TODO
     fixtures/
       yrno-response.json
       gemini-suggestion-response.json
@@ -108,16 +112,16 @@ functions/
 ```
 src/
   components/
-    WeatherCard.tsx
-    WeatherCard.test.tsx
     SuggestionCard.tsx
-    SuggestionCard.test.tsx
+    SuggestionCard.test.tsx        ✓ done (9 tests)
+    feedback/
+      ComfortRatingSelector.tsx
+      ComfortRatingSelector.test.tsx ✓ done (5 tests)
+      WornItemsSelector.tsx
+      WornItemsSelector.test.tsx   ✓ done (9 tests)
     wardrobe/
       ItemForm.tsx
-      ItemForm.test.tsx
-  lib/
-    wardrobe.ts
-    wardrobe.test.ts
+      ItemForm.test.tsx            ✓ done (8 tests)
   test/
     setup.ts
     test-utils.tsx
@@ -239,7 +243,17 @@ Security boundary — regression suite for IP validation.
 
 ### Priority 4: Write During Phase 3
 
-#### `submitFeedback` Integration
+#### Feedback Input Validation (`validateInput.test.ts`) — DONE (42 tests)
+
+Pure validators extracted from `submitFeedback.ts` for unit testability.
+
+- `isValidDateStr` — format regex, leap-year handling, roll-over guard (Feb 30)
+- `isNotInFuture` — today accepted, tomorrow rejected
+- `isWithinDaysAgo` — exactly 7 days accepted, 8 days rejected
+- `isValidComfortRating` — all 5 values, unknown strings, non-string types
+- `validateFeedbackInput` — every invalid field combination, boundary values
+
+#### `submitFeedback` Integration (TODO)
 
 - Stores feedback with weather snapshot
 - Validates itemsWorn IDs exist
@@ -249,15 +263,12 @@ Security boundary — regression suite for IP validation.
 
 ### Priority 5: Write During Phase 0–3 (Frontend)
 
-#### Component Tests
+#### Component Tests — DONE (31 tests total)
 
-Start with the most complex display and input components:
-
-- `WeatherCard` — periods display, empty state, condition badge
-- `ItemForm` — required field validation, pre-population for editing
-- `SuggestionCard` — layer display, loading skeleton, error state
-- `ComfortRatingSelector` — 5 options, selection callback
-- ~30 test cases total
+- `SuggestionCard` — layer display, null layers, accessories, fallback badge (9 tests)
+- `ItemForm` — required field validation, pre-population for editing (8 tests)
+- `ComfortRatingSelector` — all 5 options render, onChange fired with correct value (5 tests)
+- `WornItemsSelector` — grouped by category, select/deselect, empty state, ordering (9 tests)
 
 ---
 
@@ -501,20 +512,33 @@ Unit tests run without emulators (fast). Integration tests use `emulators:exec`.
 
 ## Current Test Status
 
+### Backend unit tests (`functions/`)
+
 | Test file | Tests | Status |
 | --------- | ----- | ------ |
 | `test/unit/weather/osloLogic.test.ts` | 45 | Done |
 | `test/unit/weather/aggregate.test.ts` | 26 | Done |
 | `test/unit/weather/feelsLike.test.ts` | 14 | Done |
-| `test/unit/weather/fetchWeather.test.ts` | ~5 | TODO (integration) |
 | `test/unit/suggestion/buildPrompt.test.ts` | 16 | Done |
 | `test/unit/suggestion/validateResponse.test.ts` | 18 | Done |
-| `test/unit/suggestion/getDailySuggestion.test.ts` | ~7 | TODO (integration) |
 | `test/unit/onboarding/ssrf.test.ts` | 15 | Done |
 | `test/unit/onboarding/scraper.test.ts` | 15 | Done |
 | `test/unit/onboarding/validateExtraction.test.ts` | 21 | Done |
-| `test/unit/onboarding/crawlProductUrl.test.ts` | ~5 | TODO (integration) |
-| `test/unit/feedback/*` | ~12 | TODO (Phase 3) |
-| Frontend component tests | ~30 | TODO (Phase 0–3) |
+| `test/unit/feedback/validateInput.test.ts` | 42 | Done |
+| `test/integration/weather/fetchWeather.test.ts` | ~5 | TODO |
+| `test/integration/suggestion/getDailySuggestion.test.ts` | ~7 | TODO |
+| `test/integration/onboarding/crawlProductUrl.test.ts` | ~5 | TODO |
+| `test/integration/feedback/submitFeedback.test.ts` | ~6 | TODO |
 
-**Total implemented:** 170 tests, all passing (~190ms runtime).
+**Backend total: 212 unit tests, all passing (~200ms runtime).**
+
+### Frontend tests (`src/`)
+
+| Test file | Tests | Status |
+| --------- | ----- | ------ |
+| `src/components/SuggestionCard.test.tsx` | 9 | Done |
+| `src/components/wardrobe/ItemForm.test.tsx` | 8 | Done |
+| `src/components/feedback/ComfortRatingSelector.test.tsx` | 5 | Done |
+| `src/components/feedback/WornItemsSelector.test.tsx` | 9 | Done |
+
+**Frontend total: 31 tests, all passing (~2.7s runtime).**

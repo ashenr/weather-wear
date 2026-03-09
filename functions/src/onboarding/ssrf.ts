@@ -10,6 +10,8 @@
  * Returns true if the IPv4 address falls into a blocked range:
  * RFC 1918 (private), loopback, link-local (includes GCP metadata 169.254.169.254),
  * shared address space (100.64/10), and non-routable (0.0.0.0/8).
+ * @param {string} ip - IPv4 address to check
+ * @return {boolean} true if the IP should be blocked
  */
 export function isBlockedIpv4(ip: string): boolean {
   const parts = ip.split('.').map(Number)
@@ -29,6 +31,8 @@ export function isBlockedIpv4(ip: string): boolean {
 /**
  * Returns true if the IPv6 address falls into a blocked range:
  * loopback (::1), unique local (fc00::/7), link-local (fe80::/10).
+ * @param {string} ip - IPv6 address to check
+ * @return {boolean} true if the IP should be blocked
  */
 export function isBlockedIpv6(ip: string): boolean {
   const normalized = ip.toLowerCase()

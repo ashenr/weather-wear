@@ -11,10 +11,16 @@
 
 ### Secrets Configuration
 
-Set required secrets before deploying functions:
+Set required secrets before deploying functions (one-time setup):
 
 ```bash
 firebase functions:secrets:set GEMINI_API_KEY
+```
+
+Verify the secret exists:
+
+```bash
+firebase functions:secrets:access GEMINI_API_KEY
 ```
 
 ### Regions
@@ -24,37 +30,60 @@ firebase functions:secrets:set GEMINI_API_KEY
 | Cloud Functions  | europe-west1  |
 | Firestore        | eur3          |
 
-## Linting
+---
 
-**Frontend:**
+## Pre-Deployment Checklist
+
+Run all of the following before deploying. Fix any errors before proceeding.
+
+### 1. Lint
 
 ```bash
+# Frontend
 npm run lint
+
+# Cloud Functions
+cd functions && npm run lint && cd ..
 ```
 
-**Cloud Functions:**
+### 2. Test
 
 ```bash
-cd functions && npm run lint
+# Frontend
+npm test -- --run
+
+# Backend unit tests
+cd functions && npm run test:unit && cd ..
 ```
 
-## Build
-
-### Frontend (React + Vite)
+### 3. Build
 
 ```bash
+# Frontend
 npm run build
+
+# Cloud Functions
+cd functions && npm run build && cd ..
 ```
 
-Output: `dist/` directory
+> **Note:** `VITE_USE_EMULATORS` is controlled by env files. `vite build` (production mode) automatically loads `.env.production` (committed, sets `VITE_USE_EMULATORS=false`). Local dev uses `.env.development.local` (gitignored, sets `VITE_USE_EMULATORS=true`). Do **not** put `VITE_USE_EMULATORS` in `.env.local` — that file loads in all modes and would override the production setting.
 
-### Cloud Functions
+### 4. Remove deleted functions (if any)
+
+If you removed a Cloud Function from the source code, Firebase will refuse to deploy in non-interactive mode unless you delete the old function first:
 
 ```bash
-cd functions && npm run build
+# Example — replace with actual function name and region
+firebase functions:delete <functionName> --region <region>
 ```
 
-Output: `functions/lib/` directory
+To see what is currently deployed:
+
+```bash
+firebase functions:list
+```
+
+---
 
 ## Deploy Commands
 
@@ -82,12 +111,37 @@ firebase deploy --only functions:submitFeedback
 # Firestore rules only
 firebase deploy --only firestore:rules
 
-# Storage rules only
-firebase deploy --only storage:rules
-
 # Firestore indexes
 firebase deploy --only firestore:indexes
 ```
+
+---
+
+## Full Production Deploy (step by step)
+
+This is the complete sequence for a clean production deployment.
+
+```bash
+# 1. Lint
+npm run lint
+cd functions && npm run lint && cd ..
+
+# 2. Test
+npm test -- --run
+cd functions && npm run test:unit && cd ..
+
+# 3. Build
+npm run build
+cd functions && npm run build && cd ..
+
+# 4. (If any functions were removed) Delete stale deployed functions
+#    firebase functions:delete <name> --region <region>
+
+# 5. Deploy
+firebase deploy
+```
+
+---
 
 ## Post-Deployment Verification
 
@@ -114,7 +168,9 @@ Don't pre-define indexes. When queries require a composite index:
 
 ### Environment Variables
 
-Create `.env.local` in the project root (gitignored):
+Two gitignored files are needed for local development:
+
+**`.env.local`** — Firebase client config (same values for dev and prod):
 
 ```bash
 VITE_FIREBASE_API_KEY=...
@@ -123,12 +179,18 @@ VITE_FIREBASE_PROJECT_ID=smart-display-172af
 VITE_FIREBASE_STORAGE_BUCKET=smart-display-172af.firebasestorage.app
 VITE_FIREBASE_MESSAGING_SENDER_ID=...
 VITE_FIREBASE_APP_ID=...
-VITE_USE_EMULATORS=true        # connects frontend SDK to local emulators
 ```
 
+**`.env.development.local`** — dev-only flag (loaded only by `vite`, not by `vite build`):
+
+```bash
+VITE_USE_EMULATORS=true
+```
+
+> `.env.production` (committed) sets `VITE_USE_EMULATORS=false` for production builds automatically. Do **not** put `VITE_USE_EMULATORS` in `.env.local` — it would override the production setting.
+
 When `VITE_USE_EMULATORS=true`, `src/lib/firebase.ts` automatically connects
-`auth`, `db`, and `functions` to the local emulator ports. Remove or set to
-`false` to use production Firebase.
+`auth`, `db`, and `functions` to the local emulator ports.
 
 ### Start Emulators
 

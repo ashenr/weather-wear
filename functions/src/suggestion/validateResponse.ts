@@ -27,11 +27,11 @@ export function parseAndValidate(
     throw new Error('Missing overallAdvice')
   }
 
-  const accessories: SuggestionLayer[] = Array.isArray(r['accessories'])
-    ? (r['accessories'] as unknown[])
-        .map((a) => validateLayer(a, wardrobeIds))
-        .filter((a): a is SuggestionLayer => a !== null)
-    : []
+  const accessories: SuggestionLayer[] = Array.isArray(r['accessories']) ?
+    (r['accessories'] as unknown[])
+      .map((a) => validateLayer(a, wardrobeIds))
+      .filter((a): a is SuggestionLayer => a !== null) :
+    []
 
   return {
     baseLayer: validateLayer(r['baseLayer'], wardrobeIds),

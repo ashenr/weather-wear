@@ -2,9 +2,12 @@
 
 ## Status
 - Phase 0 (Foundation) complete and verified end-to-end.
-- 170 unit tests passing (osloLogic: 45, aggregate: 26, feelsLike: 14, buildPrompt: 16, validateResponse: 18, ssrf: 15, scraper: 15, validateExtraction: 21).
+- 212 backend unit tests passing (osloLogic: 45, aggregate: 26, feelsLike: 14, buildPrompt: 16, validateResponse: 18, ssrf: 15, scraper: 15, validateExtraction: 21, validateInput: 42).
+- 31 frontend unit tests passing (SuggestionCard: 9, ItemForm: 8, ComfortRatingSelector: 5, WornItemsSelector: 9).
 - Phase 1 (Core Suggestion MVP) complete. Both frontend and functions builds pass.
 - Phase 2 (Lazy Onboarding) complete. Both builds pass.
+- Phase 3 (Feedback Loop) complete. Both builds pass.
+- App deployed to Firebase Hosting and working in production. No Firestore index errors observed.
 
 ## Key Files
 - `src/main.tsx` — React entry; uses `<ChakraProvider value={defaultSystem}>`
@@ -31,8 +34,18 @@
 - `src/components/wardrobe/ItemCard.tsx` — wardrobe item card with warmth dots, waterproof/windproof badges
 - `src/components/SuggestionCard.tsx` — displays Gemini suggestion (layers + accessories + overallAdvice)
 - `src/pages/WardrobePage.tsx`, `AddItemPage.tsx`, `ItemDetailPage.tsx` — wardrobe CRUD pages
-- `.env.local` — Firebase client config + VITE_USE_EMULATORS=true (not committed)
+- `.env.local` — Firebase client config (VITE_FIREBASE_* vars, not committed)
+- `.env.development.local` — `VITE_USE_EMULATORS=true` for local dev (not committed)
+- `.env.production` — `VITE_USE_EMULATORS=false` (committed; loaded by vite build automatically)
 - `functions/test/helpers/factories.ts` — makeSummary, makePeriod, makeTimeseries
+- `functions/src/feedback/types.ts` — ComfortRating, SubmitFeedbackInput, FeedbackSubmitDoc
+- `functions/src/feedback/validateInput.ts` — isValidDateStr, isNotInFuture, isWithinDaysAgo, isValidComfortRating, validateFeedbackInput (all exported/tested)
+- `functions/src/feedback/submitFeedback.ts` — onCall; validates, checks wardrobe IDs, snapshots weather, writes feedback doc
+- `src/types/feedback.ts` — ComfortRating, COMFORT_RATINGS, FeedbackEntry
+- `src/lib/feedback.ts` — submitFeedback(), getFeedbackForDate(), getRecentFeedback()
+- `src/components/feedback/ComfortRatingSelector.tsx` — 5-option RadioCard comfort picker
+- `src/components/feedback/WornItemsSelector.tsx` — CheckboxCard multi-select grouped by category
+- `src/pages/FeedbackPage.tsx` — full feedback submission page (date picker, worn items, rating, note)
 
 ## Firebase
 - Project: `smart-display-172af`

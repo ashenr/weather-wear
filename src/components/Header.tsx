@@ -40,6 +40,7 @@ export function Header() {
           <HStack gap={4}>
             <NavLink to="/" label="Dashboard" />
             <NavLink to="/wardrobe" label="Wardrobe" />
+            <NavLink to="/feedback" label="Log Feedback" />
           </HStack>
         )}
       </HStack>

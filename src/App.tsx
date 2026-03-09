@@ -7,6 +7,7 @@ import { DashboardPage } from './pages/DashboardPage'
 import { WardrobePage } from './pages/WardrobePage'
 import { AddItemPage } from './pages/AddItemPage'
 import { ItemDetailPage } from './pages/ItemDetailPage'
+import { FeedbackPage } from './pages/FeedbackPage'
 
 function App() {
   return (
@@ -50,6 +51,16 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <ItemDetailPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/feedback"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <FeedbackPage />
                 </Layout>
               </ProtectedRoute>
             }

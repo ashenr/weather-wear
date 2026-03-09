@@ -1,4 +1,4 @@
-import type { PeriodData, DailySummary } from '../weather/types.js'
+import type {PeriodData, DailySummary} from '../weather/types.js'
 
 export interface WardrobeItemDoc {
   id: string

@@ -242,14 +242,14 @@ export const getDailySuggestion = onCall(
 
 ## Verification Checklist
 
-- [ ] Can add a wardrobe item via the manual form and see it in Firestore
-- [ ] Wardrobe list page shows all items with correct data
-- [ ] Can edit and delete wardrobe items
-- [ ] `getDailySuggestion` returns a valid suggestion with real wardrobe items
-- [ ] Gemini prompt produces sensible layering recommendations
-- [ ] Suggestion is cached — second call returns cached result without hitting Gemini
-- [ ] Dashboard displays both weather and suggestion data
-- [ ] Scheduled weather function deploys and triggers correctly
-- [ ] Empty wardrobe shows a helpful message instead of crashing
-- [ ] Build succeeds for both frontend and functions
-- [ ] Check Firebase Cloud Functions logs for Firestore index errors — if any queries fail with "requires an index" errors, follow the link in the error message to create the needed composite index
+- [x] Can add a wardrobe item via the manual form and see it in Firestore
+- [x] Wardrobe list page shows all items with correct data
+- [x] Can edit and delete wardrobe items
+- [x] `getDailySuggestion` returns a valid suggestion with real wardrobe items
+- [x] Gemini prompt produces sensible layering recommendations
+- [x] Suggestion is cached — second call returns cached result without hitting Gemini
+- [x] Dashboard displays both weather and suggestion data
+- [x] Scheduled weather function deploys and triggers correctly
+- [x] Empty wardrobe shows a helpful message instead of crashing
+- [x] Build succeeds for both frontend and functions
+- [x] Check Firebase Cloud Functions logs for Firestore index errors — if any queries fail with "requires an index" errors, follow the link in the error message to create the needed composite index

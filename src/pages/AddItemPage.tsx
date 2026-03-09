@@ -212,7 +212,7 @@ export function AddItemPage() {
                 borderColor="yellow.emphasized"
               >
                 <Text fontSize="sm">
-                  Some details couldn't be extracted. Please fill in the missing fields.
+                  Some details couldn&apos;t be extracted. Please fill in the missing fields.
                 </Text>
               </Box>
             )}

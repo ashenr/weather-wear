@@ -9,7 +9,7 @@ interface WeatherInput {
 }
 
 const CONDITION_DISPLAY: Record<ConditionType, string> = {
-  warm: 'Warm',
+  'warm': 'Warm',
   'dry-mild': 'Dry Mild',
   'dry-cool': 'Dry Cool',
   'windy-cold': 'Windy Cold',
@@ -58,14 +58,14 @@ export function buildSuggestionPrompt(
   const periodMap = Object.fromEntries(periods.map((p) => [p.name, p]))
 
   const feedbackSection =
-    feedback.length === 0
-      ? 'No feedback history yet.'
-      : feedback
-          .map(
-            (f) =>
-              `${f.date} (${f.conditionType}): wore [${f.itemsWorn.join(', ')}], rated "${f.comfortRating}"${f.note ? ` — "${f.note}"` : ''}`
-          )
-          .join('\n')
+    feedback.length === 0 ?
+      'No feedback history yet.' :
+      feedback
+        .map(
+          (f) =>
+            `${f.date} (${f.conditionType}): wore [${f.itemsWorn.join(', ')}], rated "${f.comfortRating}"${f.note ? ` — "${f.note}"` : ''}`
+        )
+        .join('\n')
 
   const wardrobeSection = wardrobe
     .map((item) =>
