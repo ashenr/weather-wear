@@ -33,6 +33,13 @@ export async function fetchYrno(
       return null
     }
 
+    if (response.status === 429) {
+      const retryAfter = response.headers.get('Retry-After')
+      throw new Error(
+        `yr.no rate limited${retryAfter ? ` (Retry-After: ${retryAfter}s)` : ''}`
+      )
+    }
+
     if (!response.ok) {
       throw new Error(
         `yr.no API error: ${response.status} ${response.statusText}`

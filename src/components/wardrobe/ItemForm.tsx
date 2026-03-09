@@ -11,6 +11,7 @@ import {
   Textarea,
   Text,
 } from '@chakra-ui/react'
+import { PhotoUpload } from './PhotoUpload'
 import type {
   WardrobeCategory,
   WarmthLevel,
@@ -28,6 +29,9 @@ interface ItemFormProps {
   onSubmit: (values: ItemFormValues) => Promise<void>
   isLoading: boolean
   submitLabel?: string
+  existingPhotoUrl?: string
+  onPhotoFileChange?: (file: File | null) => void
+  uploadProgress?: number
 }
 
 const DEFAULT_VALUES: ItemFormValues = {
@@ -68,6 +72,9 @@ export function ItemForm({
   onSubmit,
   isLoading,
   submitLabel = 'Save',
+  existingPhotoUrl,
+  onPhotoFileChange,
+  uploadProgress,
 }: ItemFormProps) {
   const [values, setValues] = useState<ItemFormValues>({
     ...DEFAULT_VALUES,
@@ -97,6 +104,18 @@ export function ItemForm({
   return (
     <form onSubmit={handleSubmit} noValidate>
       <Stack gap={5}>
+        {onPhotoFileChange && (
+          <Field.Root>
+            <Field.Label>Photo (optional)</Field.Label>
+            <PhotoUpload
+              existingPhotoUrl={existingPhotoUrl}
+              onFileChange={onPhotoFileChange}
+              uploadProgress={uploadProgress}
+              disabled={isLoading}
+            />
+          </Field.Root>
+        )}
+
         <Field.Root required invalid={!!errors.name}>
           <Field.Label>
             Name <Field.RequiredIndicator />

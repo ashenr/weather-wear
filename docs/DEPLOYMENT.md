@@ -113,6 +113,9 @@ firebase deploy --only firestore:rules
 
 # Firestore indexes
 firebase deploy --only firestore:indexes
+
+# Storage rules only
+firebase deploy --only storage
 ```
 
 ---
@@ -156,6 +159,21 @@ firebase deploy
 firebase functions:log
 ```
 
+## Function Configuration
+
+Timeouts are set in each function's `onCall`/`onSchedule` options (not in `firebase.json`):
+
+| Function             | Timeout |
+|----------------------|---------|
+| `fetchWeather`       | 30s     |
+| `getDailySuggestion` | 60s     |
+| `crawlProductUrl`    | 30s     |
+| `submitFeedback`     | 10s     |
+
+All functions run in `europe-west1` with `maxInstances: 10` (set via `setGlobalOptions` in `index.ts`).
+
+---
+
 ## Firestore Indexes
 
 Don't pre-define indexes. When queries require a composite index:
@@ -190,15 +208,23 @@ VITE_USE_EMULATORS=true
 > `.env.production` (committed) sets `VITE_USE_EMULATORS=false` for production builds automatically. Do **not** put `VITE_USE_EMULATORS` in `.env.local` — it would override the production setting.
 
 When `VITE_USE_EMULATORS=true`, `src/lib/firebase.ts` automatically connects
-`auth`, `db`, and `functions` to the local emulator ports.
+`auth`, `db`, `storage`, and `functions` to the local emulator ports.
 
 ### Start Emulators
 
-Build functions first, then start emulators:
+Build functions first, then start emulators. Use the helper script to automatically persist data between runs:
 
 ```bash
 cd functions && npm run build && cd ..
-firebase emulators:start --only auth,firestore,functions
+./emulators.sh
+```
+
+The script runs `firebase emulators:start --only auth,firestore,functions,storage` with `--import emulator-data --export-on-exit emulator-data`. Data is saved to `emulator-data/` on Ctrl+C and restored on the next run. The directory is gitignored.
+
+To start fresh (discard saved data):
+
+```bash
+rm -rf emulator-data && ./emulators.sh
 ```
 
 ### Emulator Ports
@@ -208,6 +234,7 @@ firebase emulators:start --only auth,firestore,functions
 | Auth         | 9099 |
 | Functions    | 5001 |
 | Firestore    | 8080 |
+| Storage      | 9199 |
 | Hosting      | 5000 |
 | Emulator UI  | 4000 |
 

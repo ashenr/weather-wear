@@ -6,7 +6,7 @@ import type {SubmitFeedbackInput, FeedbackSubmitDoc} from './types.js'
 import type {WeatherCacheDoc} from '../weather/types.js'
 
 export const submitFeedback = onCall(
-  {region: 'europe-west1'},
+  {region: 'europe-west1', timeoutSeconds: 10},
   async (request) => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Authentication required')
@@ -60,7 +60,17 @@ export const submitFeedback = onCall(
       note: data.note ?? null,
     }
 
-    await db.collection('users').doc(userId).collection('feedback').doc(data.date).set(feedbackDoc)
+    try {
+      await db.collection('users').doc(userId).collection('feedback').doc(data.date).set(feedbackDoc)
+    } catch (writeErr) {
+      logger.warn('Feedback write failed, retrying once', writeErr)
+      try {
+        await db.collection('users').doc(userId).collection('feedback').doc(data.date).set(feedbackDoc)
+      } catch (retryErr) {
+        logger.error('Feedback write retry failed', retryErr)
+        throw new HttpsError('unavailable', 'Failed to save feedback. Please try again.')
+      }
+    }
     logger.info(`Feedback submitted for ${userId} on ${data.date}`)
 
     return {success: true}

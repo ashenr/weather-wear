@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react'
+import { Link as RouterLink } from 'react-router-dom'
 import { doc, getDoc } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
 import {
   Box,
   Button,
-  Center,
   Heading,
+  Link,
   Separator,
   Skeleton,
-  Spinner,
   Text,
   VStack,
 } from '@chakra-ui/react'
@@ -88,9 +88,17 @@ export function DashboardPage() {
 
   if (loading) {
     return (
-      <Center py={12}>
-        <Spinner size="xl" />
-      </Center>
+      <Box maxW="600px" mx="auto" px={4} py={6}>
+        <VStack align="stretch" gap={6}>
+          <Skeleton height="32px" width="220px" borderRadius="md" />
+          <Skeleton height="180px" borderRadius="lg" />
+          <Skeleton height="32px" width="140px" borderRadius="md" />
+          <Separator />
+          <Skeleton height="24px" width="160px" borderRadius="md" />
+          <Skeleton height="80px" borderRadius="md" />
+          <Skeleton height="80px" borderRadius="md" />
+        </VStack>
+      </Box>
     )
   }
 
@@ -126,7 +134,15 @@ export function DashboardPage() {
             ) : suggestionError ? (
               <VStack gap={3} align="flex-start">
                 <Text color="fg.muted">{suggestionError}</Text>
-                {!suggestionError.includes('wardrobe') && (
+                {suggestionError.includes('wardrobe') ? (
+                  <Link asChild>
+                    <RouterLink to="/wardrobe/add">
+                      <Button size="sm" colorPalette="blue">
+                        Add Items to Wardrobe
+                      </Button>
+                    </RouterLink>
+                  </Link>
+                ) : (
                   <Button size="sm" variant="outline" onClick={loadSuggestion}>
                     Retry Suggestion
                   </Button>

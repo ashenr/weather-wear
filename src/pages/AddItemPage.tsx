@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Box,
@@ -6,17 +6,18 @@ import {
   Field,
   Heading,
   HStack,
-  Image,
   Input,
   Stack,
   Tabs,
   Text,
 } from '@chakra-ui/react'
+import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { ItemForm } from '../components/wardrobe/ItemForm'
 import { addWardrobeItem } from '../lib/wardrobe'
 import { crawlProductUrl } from '../lib/onboarding'
 import { toaster } from '../components/ui/toaster'
 import { useAuth } from '../contexts/AuthContext'
+import { storage } from '../lib/firebase'
 import type { ItemFormValues } from '../components/wardrobe/ItemForm'
 import type { WardrobeCategory, WarmthLevel, WaterproofLevel } from '../types/wardrobe'
 import type { ExtractedItem } from '../lib/onboarding'
@@ -25,18 +26,30 @@ export function AddItemPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [isSaving, setIsSaving] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null)
   const [activeTab, setActiveTab] = useState('url')
   const [urlInput, setUrlInput] = useState('')
   const [isExtracting, setIsExtracting] = useState(false)
+  const [extractionStage, setExtractionStage] = useState(0)
   const [extractError, setExtractError] = useState<string | null>(null)
   const [extracted, setExtracted] = useState<ExtractedItem | null>(null)
   const [formKey, setFormKey] = useState(0)
 
+  const EXTRACTION_STAGES = ['Fetching product page…', 'Extracting details with AI…']
+
+  useEffect(() => {
+    if (!isExtracting) {
+      setExtractionStage(0)
+      return
+    }
+    const timer = setTimeout(() => setExtractionStage(1), 2500)
+    return () => clearTimeout(timer)
+  }, [isExtracting])
+
   const handleExtract = async () => {
     const trimmed = urlInput.trim()
     if (!trimmed) return
-
-    // Client-side URL validation before hitting the function
     try {
       const parsed = new URL(trimmed)
       if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
@@ -51,6 +64,7 @@ export function AddItemPage() {
     setIsExtracting(true)
     setExtractError(null)
     setExtracted(null)
+    setSelectedPhotoFile(null)
 
     try {
       const result = await crawlProductUrl(trimmed)
@@ -63,6 +77,23 @@ export function AddItemPage() {
     } finally {
       setIsExtracting(false)
     }
+  }
+
+  const uploadPhoto = (file: File, userId: string): Promise<{ photoUrl: string; photoPath: string }> => {
+    return new Promise((resolve, reject) => {
+      const path = `users/${userId}/wardrobe/${crypto.randomUUID()}/photo.jpg`
+      const fileRef = storageRef(storage, path)
+      const task = uploadBytesResumable(fileRef, file)
+      task.on(
+        'state_changed',
+        (snap) => setUploadProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
+        reject,
+        async () => {
+          const photoUrl = await getDownloadURL(task.snapshot.ref)
+          resolve({ photoUrl, photoPath: path })
+        },
+      )
+    })
   }
 
   const hasPartialExtraction = extracted !== null && (!extracted.name || !extracted.category)
@@ -85,10 +116,21 @@ export function AddItemPage() {
   const handleSubmit = async (values: ItemFormValues) => {
     if (!user) return
     setIsSaving(true)
+    setUploadProgress(0)
     try {
+      let photoUrl = extracted?.photoUrl ?? ''
+      let photoPath: string | undefined
+
+      if (selectedPhotoFile) {
+        const result = await uploadPhoto(selectedPhotoFile, user.uid)
+        photoUrl = result.photoUrl
+        photoPath = result.photoPath
+      }
+
       await addWardrobeItem(user.uid, {
         ...values,
-        photoUrl: extracted?.photoUrl ?? '',
+        photoUrl,
+        photoPath,
         sourceUrl: extracted?.sourceUrl ?? '',
         extractedByAI: extracted !== null,
       })
@@ -106,6 +148,7 @@ export function AddItemPage() {
       })
     } finally {
       setIsSaving(false)
+      setUploadProgress(0)
     }
   }
 
@@ -125,6 +168,7 @@ export function AddItemPage() {
           if (e.value === 'manual') {
             setExtracted(null)
             setExtractError(null)
+            setSelectedPhotoFile(null)
             setFormKey((k) => k + 1)
           }
         }}
@@ -142,9 +186,7 @@ export function AddItemPage() {
                 <Input
                   value={urlInput}
                   onChange={(e) => setUrlInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleExtract()
-                  }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleExtract() }}
                   placeholder="Paste a product URL from Zalando, Norrøna, Uniqlo, etc."
                   disabled={isExtracting}
                   flex={1}
@@ -161,7 +203,7 @@ export function AddItemPage() {
               </HStack>
               {isExtracting && (
                 <Text fontSize="sm" color="fg.muted">
-                  Extracting product details…
+                  {EXTRACTION_STAGES[extractionStage]}
                 </Text>
               )}
             </Field.Root>
@@ -181,25 +223,10 @@ export function AddItemPage() {
                   size="xs"
                   variant="ghost"
                   colorPalette="red"
-                  onClick={() => {
-                    setActiveTab('manual')
-                    setExtractError(null)
-                  }}
+                  onClick={() => { setActiveTab('manual'); setExtractError(null) }}
                 >
                   Enter manually instead →
                 </Button>
-              </Box>
-            )}
-
-            {extracted?.photoUrl && (
-              <Box borderRadius="md" overflow="hidden" bg="bg.subtle" p={2} textAlign="center">
-                <Image
-                  src={extracted.photoUrl}
-                  alt="Product image"
-                  maxH="180px"
-                  objectFit="contain"
-                  display="inline-block"
-                />
               </Box>
             )}
 
@@ -224,6 +251,9 @@ export function AddItemPage() {
                 onSubmit={handleSubmit}
                 isLoading={isSaving}
                 submitLabel="Add Item"
+                existingPhotoUrl={extracted.photoUrl ?? undefined}
+                onPhotoFileChange={setSelectedPhotoFile}
+                uploadProgress={uploadProgress}
               />
             )}
 
@@ -241,6 +271,8 @@ export function AddItemPage() {
             onSubmit={handleSubmit}
             isLoading={isSaving}
             submitLabel="Add Item"
+            onPhotoFileChange={setSelectedPhotoFile}
+            uploadProgress={uploadProgress}
           />
         </Tabs.Content>
       </Tabs.Root>

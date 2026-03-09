@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   Box,
   Button,
+  EmptyState,
   Field,
   Heading,
   Input,
@@ -57,19 +58,26 @@ export function FeedbackPage() {
   // Load existing feedback when date changes
   useEffect(() => {
     if (!user) return
-    getFeedbackForDate(user.uid, selectedDate).then((entry) => {
-      if (entry) {
-        setWornItems(entry.itemsWorn)
-        setComfortRating(entry.comfortRating)
-        setNote(entry.note ?? '')
-        setExistingFeedback(true)
-      } else {
+    getFeedbackForDate(user.uid, selectedDate)
+      .then((entry) => {
+        if (entry) {
+          setWornItems(entry.itemsWorn)
+          setComfortRating(entry.comfortRating)
+          setNote(entry.note ?? '')
+          setExistingFeedback(true)
+        } else {
+          setWornItems([])
+          setComfortRating(null)
+          setNote('')
+          setExistingFeedback(false)
+        }
+      })
+      .catch(() => {
         setWornItems([])
         setComfortRating(null)
         setNote('')
         setExistingFeedback(false)
-      }
-    })
+      })
   }, [user, selectedDate])
 
   const handleSubmit = async () => {
@@ -145,57 +153,72 @@ export function FeedbackPage() {
 
         <Separator />
 
-        {/* Worn items */}
-        <Field.Root>
-          <Field.Label>What did you wear?</Field.Label>
-          <Field.HelperText mb={2}>Select all items you wore that day</Field.HelperText>
-          {loading ? (
-            <VStack align="stretch" gap={2}>
-              <Skeleton height="60px" borderRadius="md" />
-              <Skeleton height="60px" borderRadius="md" />
-            </VStack>
-          ) : (
-            <WornItemsSelector
-              items={wardrobeItems}
-              value={wornItems}
-              onChange={setWornItems}
-            />
-          )}
-        </Field.Root>
+        {loading ? (
+          <VStack align="stretch" gap={2}>
+            <Skeleton height="60px" borderRadius="md" />
+            <Skeleton height="60px" borderRadius="md" />
+          </VStack>
+        ) : wardrobeItems.length === 0 ? (
+          <EmptyState.Root>
+            <EmptyState.Content>
+              <VStack textAlign="center" gap={3}>
+                <EmptyState.Title>No wardrobe items yet</EmptyState.Title>
+                <EmptyState.Description>
+                  Add clothing items to your wardrobe before logging feedback.
+                </EmptyState.Description>
+              </VStack>
+              <Button colorPalette="blue" onClick={() => navigate('/wardrobe/add')}>
+                Add Items to Wardrobe
+              </Button>
+            </EmptyState.Content>
+          </EmptyState.Root>
+        ) : (
+          <>
+            {/* Worn items */}
+            <Field.Root>
+              <Field.Label>What did you wear?</Field.Label>
+              <Field.HelperText mb={2}>Select all items you wore that day</Field.HelperText>
+              <WornItemsSelector
+                items={wardrobeItems}
+                value={wornItems}
+                onChange={setWornItems}
+              />
+            </Field.Root>
 
-        <Separator />
+            <Separator />
 
-        {/* Comfort rating */}
-        <Field.Root>
-          <Field.Label>How comfortable were you?</Field.Label>
-          <Field.HelperText mb={2}>Rate your thermal comfort throughout the day</Field.HelperText>
-          <ComfortRatingSelector value={comfortRating} onChange={setComfortRating} />
-        </Field.Root>
+            {/* Comfort rating */}
+            <Field.Root>
+              <Field.Label>How comfortable were you?</Field.Label>
+              <Field.HelperText mb={2}>Rate your thermal comfort throughout the day</Field.HelperText>
+              <ComfortRatingSelector value={comfortRating} onChange={setComfortRating} />
+            </Field.Root>
 
-        <Separator />
+            <Separator />
 
-        {/* Optional note */}
-        <Field.Root>
-          <Field.Label>Notes (optional)</Field.Label>
-          <Textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Any notes? e.g. 'was fine until the wind picked up'"
-            maxLength={500}
-            rows={3}
-          />
-          <Field.HelperText textAlign="right">{note.length}/500</Field.HelperText>
-        </Field.Root>
+            {/* Optional note */}
+            <Field.Root>
+              <Field.Label>Notes (optional)</Field.Label>
+              <Textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Any notes? e.g. 'was fine until the wind picked up'"
+                maxLength={500}
+                rows={3}
+              />
+              <Field.HelperText textAlign="right">{note.length}/500</Field.HelperText>
+            </Field.Root>
 
-        {/* Submit */}
-        <Button
-          colorPalette="blue"
-          loading={submitting}
-          onClick={handleSubmit}
-          disabled={loading}
-        >
-          {existingFeedback ? 'Update Feedback' : 'Submit Feedback'}
-        </Button>
+            {/* Submit */}
+            <Button
+              colorPalette="blue"
+              loading={submitting}
+              onClick={handleSubmit}
+            >
+              {existingFeedback ? 'Update Feedback' : 'Submit Feedback'}
+            </Button>
+          </>
+        )}
       </VStack>
     </Box>
   )

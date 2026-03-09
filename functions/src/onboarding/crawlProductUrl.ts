@@ -11,7 +11,7 @@ import type {ExtractedItem} from './extractionPrompt.js'
 const geminiApiKey = defineSecret('GEMINI_API_KEY')
 
 export const crawlProductUrl = onCall(
-  {region: 'europe-west1', secrets: [geminiApiKey]},
+  {region: 'europe-west1', secrets: [geminiApiKey], timeoutSeconds: 30},
   async (request): Promise<ExtractedItem> => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Authentication required')

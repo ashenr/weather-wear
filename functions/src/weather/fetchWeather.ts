@@ -1,4 +1,4 @@
-import {onCall} from 'firebase-functions/v2/https'
+import {onCall, HttpsError} from 'firebase-functions/v2/https'
 import {onSchedule} from 'firebase-functions/v2/scheduler'
 import * as logger from 'firebase-functions/logger'
 import {getFirestore} from 'firebase-admin/firestore'
@@ -30,7 +30,18 @@ export async function fetchAndCacheWeather(): Promise<{
     ifModifiedSince = existing.yrnoUpdatedAt
   }
 
-  const result = await fetchYrno(ifModifiedSince)
+  let result
+  try {
+    result = await fetchYrno(ifModifiedSince)
+  } catch (err) {
+    logger.warn('Failed to fetch from yr.no', err)
+    if (cacheSnap.exists) {
+      logger.info('yr.no unavailable — returning stale cached data')
+      return {status: 'cached', date: today}
+    }
+    throw new HttpsError('unavailable', 'Weather data is currently unavailable. Please try again later.')
+  }
+
   if (!result) {
     logger.info('yr.no returned 304 Not Modified — using cached data')
     return {status: 'cached', date: today}
@@ -53,13 +64,23 @@ export async function fetchAndCacheWeather(): Promise<{
     ...(result.expires ? {yrnoExpires: result.expires} : {}),
   }
 
-  await cacheRef.set(doc)
+  try {
+    await cacheRef.set(doc)
+  } catch (writeErr) {
+    logger.warn('Firestore write failed, retrying once', writeErr)
+    try {
+      await cacheRef.set(doc)
+    } catch (retryErr) {
+      logger.error('Firestore write retry failed', retryErr)
+      throw new HttpsError('unavailable', 'Failed to save weather data. Please try again.')
+    }
+  }
   logger.info(`Weather cached for ${today}: ${conditionType}`)
   return {status: 'updated', date: today, conditionType}
 }
 
 export const fetchWeather = onCall(
-  {region: 'europe-west1'},
+  {region: 'europe-west1', timeoutSeconds: 30},
   async () => {
     return fetchAndCacheWeather()
   }
@@ -68,6 +89,10 @@ export const fetchWeather = onCall(
 export const scheduledFetchWeather = onSchedule(
   {schedule: '0 5 * * *', timeZone: 'Europe/Oslo', region: 'europe-west1'},
   async () => {
-    await fetchAndCacheWeather()
+    try {
+      await fetchAndCacheWeather()
+    } catch (err) {
+      logger.error('Scheduled weather fetch failed', err)
+    }
   }
 )

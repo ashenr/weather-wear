@@ -79,3 +79,6 @@ dist/
 
 # Local secrets for emulator
 functions/.secret.local
+
+# Firebase emulator data export
+emulator-data/
