@@ -2,8 +2,17 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if false;
+    // Weather cache is top-level, location-specific (not user-specific).
+    // Written by Cloud Functions (Admin SDK bypasses rules).
+    // Readable by any authenticated user.
+    match /weatherCache/{date} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // Users can only access their own data.
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }

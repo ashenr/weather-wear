@@ -2,7 +2,17 @@
   "mcpServers": {
     "chakra-ui": {
       "command": "npx",
-      "args": ["-y", "@chakra-ui/react-mcp"]
+      "args": [
+        "-y",
+        "@chakra-ui/react-mcp"
+      ]
+    },
+    "chrome": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest"
+      ]
     }
   }
 }

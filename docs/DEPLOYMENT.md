@@ -24,6 +24,20 @@ firebase functions:secrets:set GEMINI_API_KEY
 | Cloud Functions  | europe-west1  |
 | Firestore        | eur3          |
 
+## Linting
+
+**Frontend:**
+
+```bash
+npm run lint
+```
+
+**Cloud Functions:**
+
+```bash
+cd functions && npm run lint
+```
+
 ## Build
 
 ### Frontend (React + Vite)
@@ -98,31 +112,76 @@ Don't pre-define indexes. When queries require a composite index:
 
 ## Local Development with Emulators
 
-### Start Emulators
+### Environment Variables
+
+Create `.env.local` in the project root (gitignored):
 
 ```bash
-firebase emulators:start
+VITE_FIREBASE_API_KEY=...
+VITE_FIREBASE_AUTH_DOMAIN=smart-display-172af.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=smart-display-172af
+VITE_FIREBASE_STORAGE_BUCKET=smart-display-172af.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID=...
+VITE_FIREBASE_APP_ID=...
+VITE_USE_EMULATORS=true        # connects frontend SDK to local emulators
+```
+
+When `VITE_USE_EMULATORS=true`, `src/lib/firebase.ts` automatically connects
+`auth`, `db`, and `functions` to the local emulator ports. Remove or set to
+`false` to use production Firebase.
+
+### Start Emulators
+
+Build functions first, then start emulators:
+
+```bash
+cd functions && npm run build && cd ..
+firebase emulators:start --only auth,firestore,functions
 ```
 
 ### Emulator Ports
 
-| Service    | Port |
-|------------|------|
-| Auth       | 9099 |
-| Functions  | 5001 |
-| Firestore  | 8080 |
-| Hosting    | 5000 |
-| Emulator UI| 4000 |
+| Service      | Port |
+|--------------|------|
+| Auth         | 9099 |
+| Functions    | 5001 |
+| Firestore    | 8080 |
+| Hosting      | 5000 |
+| Emulator UI  | 4000 |
 
 ### Frontend Dev Server
 
-Run in a separate terminal alongside emulators:
+Run in a separate terminal:
 
 ```bash
 npm run dev
 ```
 
-The frontend Firebase SDK should be configured to connect to local emulators when running in development mode. See `src/lib/firebase.ts` for emulator connection setup.
+The Vite dev server picks up `VITE_USE_EMULATORS=true` from `.env.local` and
+the Firebase SDK connects to emulators automatically.
+
+### Signing In with the Auth Emulator
+
+The app uses `signInWithRedirect` (not popup) for Google sign-in. When
+connected to the Auth emulator, clicking "Sign in with Google" redirects to
+the emulator's test IDP page at `http://localhost:9099/emulator/auth/handler`.
+
+**First-time setup:**
+
+1. Click "Sign in with Google" on the login page
+2. The emulator IDP page shows "No Google.com accounts exist"
+3. Click **"Add new account"**
+4. Click **"Auto-generate user information"** (or fill in an email)
+5. Click **"Sign in with Google.com"**
+6. You'll be redirected back to the dashboard as a signed-in user
+
+**Subsequent sign-ins:**
+The emulator remembers created accounts. On the IDP page, just select the
+existing test account and sign in.
+
+> **Note:** Google's real OAuth rejects automated/debugged browsers (e.g.
+> Chrome with `--remote-debugging-port`). Always use the Auth emulator for
+> local development and automated testing — it bypasses OAuth entirely.
 
 ### Testing Cloud Functions Locally
 

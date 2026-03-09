@@ -274,11 +274,34 @@ node-fetch (or use built-in fetch in Node 24)
 
 ## Verification Checklist
 
-- [ ] `npm run dev` starts the Vite dev server and loads the app
-- [ ] Google sign-in works and creates a user session
-- [ ] Unauthenticated users are redirected to `/login`
+- [x] `npm run dev` starts the Vite dev server and loads the app
+- [x] Google sign-in works and creates a user session
+- [x] Unauthenticated users are redirected to `/login`
 - [ ] Firestore security rules reject access from other users
-- [ ] `fetchWeather` function fetches data from yr.no and caches it in Firestore
-- [ ] Dashboard displays the cached weather data correctly
-- [ ] Oslo Logic classification produces sensible condition types
-- [ ] Build succeeds: `npm run build` (frontend) and `npm run build` (functions)
+- [x] `fetchWeather` function fetches data from yr.no and caches it in Firestore
+- [x] Dashboard displays the cached weather data correctly
+- [x] Oslo Logic classification produces sensible condition types (`mild-damp`, 0–5.7°C)
+- [x] Build succeeds: `npm run build` (frontend) and `npm run build` (functions)
+
+## Implementation Notes
+
+### Auth: `signInWithRedirect` instead of `signInWithPopup`
+
+The plan specified popup-based sign-in. During implementation this was changed
+to `signInWithRedirect` because Google's OAuth blocks sign-in from browsers
+launched with `--remote-debugging-port` (which includes the Chrome MCP browser
+and similar automation tools). The redirect flow avoids this restriction.
+
+`LoginPage` was also updated to redirect already-authenticated users to `/`
+(needed to complete the redirect flow after Google returns the user).
+
+### Emulator-based local auth
+
+Set `VITE_USE_EMULATORS=true` in `.env.local` to connect the frontend to local
+emulators. `src/lib/firebase.ts` calls `connectAuthEmulator`,
+`connectFirestoreEmulator`, and `connectFunctionsEmulator` when this flag is
+set.
+
+Test sign-in uses the Auth emulator's IDP widget — no real Google account
+required. See `docs/DEPLOYMENT.md` → "Signing In with the Auth Emulator" for
+the step-by-step flow.

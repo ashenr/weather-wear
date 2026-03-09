@@ -503,6 +503,7 @@ jobs:
 
   lint:
     steps:
+      - run: npm ci && npm run lint
       - run: cd functions && npm ci && npm run lint
 ```
 
