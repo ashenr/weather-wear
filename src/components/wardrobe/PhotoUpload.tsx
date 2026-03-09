@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Box, Button, HStack, Image, Progress, Text, VStack } from '@chakra-ui/react'
 
 interface Props {
@@ -44,17 +44,28 @@ export function PhotoUpload({ existingPhotoUrl, onFileChange, uploadProgress, di
   const [cleared, setCleared] = useState(false)
   const [dragging, setDragging] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const previewRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (previewRef.current) URL.revokeObjectURL(previewRef.current)
+    }
+  }, [])
 
   const handleFile = async (file: File) => {
     if (!file.type.startsWith('image/')) return
     const compressed = await compressImage(file)
     const url = URL.createObjectURL(compressed)
+    if (previewRef.current) URL.revokeObjectURL(previewRef.current)
+    previewRef.current = url
     setPreview(url)
     setCleared(false)
     onFileChange(compressed)
   }
 
   const handleClear = () => {
+    if (previewRef.current) URL.revokeObjectURL(previewRef.current)
+    previewRef.current = null
     setPreview(null)
     setCleared(true)
     onFileChange(null)
