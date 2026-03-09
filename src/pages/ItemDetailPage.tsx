@@ -58,14 +58,21 @@ export function ItemDetailPage() {
       let photoPath = item.photoPath
 
       if (selectedPhotoFile) {
-        // Upload new photo; old one will be cleaned up via photoPath in wardrobe lib on delete
-        const result = await uploadPhoto(selectedPhotoFile, user.uid, setUploadProgress)
+        const result = await uploadPhoto(selectedPhotoFile, user.uid)
+        // Delete old photo from storage after new upload succeeds
+        if (item.photoPath) {
+          try { await deleteObject(storageRef(storage, item.photoPath)) } catch (err) {
+            if ((err as { code?: string }).code !== 'storage/object-not-found') throw err
+          }
+        }
         photoUrl = result.photoUrl
         photoPath = result.photoPath
       } else if (photoRemoved) {
         // Delete old photo from storage if it exists
         if (item.photoPath) {
-          try { await deleteObject(storageRef(storage, item.photoPath)) } catch { /* already gone */ }
+          try { await deleteObject(storageRef(storage, item.photoPath)) } catch (err) {
+            if ((err as { code?: string }).code !== 'storage/object-not-found') throw err
+          }
         }
         photoUrl = ''
         photoPath = undefined
