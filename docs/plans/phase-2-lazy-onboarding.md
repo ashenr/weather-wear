@@ -136,13 +136,13 @@ export const crawlProductUrl = onCall(
 
 ## Verification Checklist
 
-- [ ] Pasting a valid product URL (e.g., from Zalando) extracts meaningful data
-- [ ] Extracted data populates the form correctly for user review
-- [ ] User can edit extracted fields before saving
-- [ ] Saved item has `extractedByAI: true` and `sourceUrl` set
-- [ ] Invalid URLs show clear error messages
-- [ ] Pages that block crawling show a helpful fallback message
-- [ ] Manual entry still works as before
-- [ ] Product image preview displays correctly when available
-- [ ] Function handles timeouts and large pages gracefully
-- [ ] Build succeeds for both frontend and functions
+- [x] Pasting a valid product URL (e.g., from Zalando) extracts meaningful data
+- [x] Extracted data populates the form correctly for user review
+- [x] User can edit extracted fields before saving
+- [x] Saved item has `extractedByAI: true` and `sourceUrl` set
+- [x] Invalid URLs show clear error messages (client-side URL validation + function HttpsError)
+- [x] Pages that block crawling show a helpful fallback message ("Page is blocking access" + "Enter manually instead" button)
+- [x] Manual entry still works as before (Manual Entry tab preserved)
+- [x] Product image preview displays correctly when available (Image component with photoUrl)
+- [x] Function handles timeouts and large pages gracefully (15s AbortController, 2MB streaming limit)
+- [x] Build succeeds for both frontend and functions

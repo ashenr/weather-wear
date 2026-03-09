@@ -2,8 +2,9 @@
 
 ## Status
 - Phase 0 (Foundation) complete and verified end-to-end.
-- 85 unit tests written and passing (osloLogic: 45, aggregate: 26, feelsLike: 14).
+- 170 unit tests passing (osloLogic: 45, aggregate: 26, feelsLike: 14, buildPrompt: 16, validateResponse: 18, ssrf: 15, scraper: 15, validateExtraction: 21).
 - Phase 1 (Core Suggestion MVP) complete. Both frontend and functions builds pass.
+- Phase 2 (Lazy Onboarding) complete. Both builds pass.
 
 ## Key Files
 - `src/main.tsx` — React entry; uses `<ChakraProvider value={defaultSystem}>`

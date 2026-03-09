@@ -505,36 +505,36 @@ Important:
 
 ## MVP Roadmap
 
-### Phase 0 — Experiment (foundation)
+### Phase 0 — Experiment (foundation) ✅
 
 **Goal:** Prove the concept works end-to-end with minimal UI.
 
-- [ ] Set up React + Vite project with Firebase SDK
-- [ ] Implement Firebase Auth (Google sign-in)
-- [ ] Set up Firestore security rules
-- [ ] Build `fetchWeather` Cloud Function — fetch yr.no data, aggregate into periods, classify with Oslo Logic, cache in Firestore
-- [ ] Build a minimal dashboard page that displays cached weather data
-- [ ] Test yr.no API integration and verify data model
+- [x] Set up React + Vite project with Firebase SDK
+- [x] Implement Firebase Auth (Google sign-in)
+- [x] Set up Firestore security rules
+- [x] Build `fetchWeather` Cloud Function — fetch yr.no data, aggregate into periods, classify with Oslo Logic, cache in Firestore
+- [x] Build a minimal dashboard page that displays cached weather data
+- [x] Test yr.no API integration and verify data model
 
-### Phase 1 — Core Suggestion (MVP)
+### Phase 1 — Core Suggestion (MVP) ✅
 
 **Goal:** Get daily clothing suggestions working.
 
-- [ ] Build manual wardrobe entry form + Firestore CRUD
-- [ ] Build wardrobe list page
-- [ ] Build `getDailySuggestion` Cloud Function — read weather + wardrobe, call Gemini, return suggestion
-- [ ] Design and iterate on the recommendation prompt
-- [ ] Build dashboard suggestion display — show layering recommendation with reasoning
-- [ ] Schedule `fetchWeather` to run daily at 05:00 CET
+- [x] Build manual wardrobe entry form + Firestore CRUD
+- [x] Build wardrobe list page
+- [x] Build `getDailySuggestion` Cloud Function — read weather + wardrobe, call Gemini, return suggestion
+- [x] Design and iterate on the recommendation prompt
+- [x] Build dashboard suggestion display — show layering recommendation with reasoning
+- [x] Schedule `fetchWeather` to run daily at 05:00 CET
 
-### Phase 2 — Lazy Onboarding
+### Phase 2 — Lazy Onboarding ✅
 
 **Goal:** Make it easy to populate the wardrobe.
 
-- [ ] Build `crawlProductUrl` Cloud Function — fetch URL, extract with Gemini
-- [ ] Design and iterate on the extraction prompt
-- [ ] Build URL-based add item flow in frontend — paste URL → preview extracted data → edit → save
-- [ ] Handle edge cases (invalid URLs, pages that block crawling, missing data)
+- [x] Build `crawlProductUrl` Cloud Function — fetch URL, extract with Gemini
+- [x] Design and iterate on the extraction prompt
+- [x] Build URL-based add item flow in frontend — paste URL → preview extracted data → edit → save
+- [x] Handle edge cases (invalid URLs, pages that block crawling, missing data)
 
 ### Phase 3 — Feedback Loop
 

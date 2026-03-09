@@ -507,9 +507,14 @@ Unit tests run without emulators (fast). Integration tests use `emulators:exec`.
 | `test/unit/weather/aggregate.test.ts` | 26 | Done |
 | `test/unit/weather/feelsLike.test.ts` | 14 | Done |
 | `test/unit/weather/fetchWeather.test.ts` | ~5 | TODO (integration) |
-| `test/unit/suggestion/*` | ~28 | TODO (Phase 1) |
-| `test/unit/onboarding/*` | ~36 | TODO (Phase 2) |
+| `test/unit/suggestion/buildPrompt.test.ts` | 16 | Done |
+| `test/unit/suggestion/validateResponse.test.ts` | 18 | Done |
+| `test/unit/suggestion/getDailySuggestion.test.ts` | ~7 | TODO (integration) |
+| `test/unit/onboarding/ssrf.test.ts` | 15 | Done |
+| `test/unit/onboarding/scraper.test.ts` | 15 | Done |
+| `test/unit/onboarding/validateExtraction.test.ts` | 21 | Done |
+| `test/unit/onboarding/crawlProductUrl.test.ts` | ~5 | TODO (integration) |
 | `test/unit/feedback/*` | ~12 | TODO (Phase 3) |
 | Frontend component tests | ~30 | TODO (Phase 0–3) |
 
-**Total implemented:** 85 tests, all passing (~150ms runtime).
+**Total implemented:** 170 tests, all passing (~190ms runtime).
