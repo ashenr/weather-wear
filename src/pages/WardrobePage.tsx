@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { APP_NAME } from '../config'
 import { useNavigate } from 'react-router-dom'
 import {
   Box,
@@ -95,7 +96,7 @@ export function WardrobePage() {
               Your wardrobe is empty.
             </Text>
             <Text color="fg.muted" textAlign="center" maxW="sm">
-              Add your jackets, sweaters, and accessories so Smart Display can
+              Add your jackets, sweaters, and accessories so {APP_NAME} can
               make personalised clothing suggestions.
             </Text>
             <Button colorPalette="blue" onClick={() => navigate('/wardrobe/add')}>
