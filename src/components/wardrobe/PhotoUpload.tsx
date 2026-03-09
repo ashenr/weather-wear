@@ -41,6 +41,7 @@ async function compressImage(file: File): Promise<File> {
 
 export function PhotoUpload({ existingPhotoUrl, onFileChange, uploadProgress, disabled }: Props) {
   const [preview, setPreview] = useState<string | null>(null)
+  const [cleared, setCleared] = useState(false)
   const [dragging, setDragging] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -49,16 +50,18 @@ export function PhotoUpload({ existingPhotoUrl, onFileChange, uploadProgress, di
     const compressed = await compressImage(file)
     const url = URL.createObjectURL(compressed)
     setPreview(url)
+    setCleared(false)
     onFileChange(compressed)
   }
 
   const handleClear = () => {
     setPreview(null)
+    setCleared(true)
     onFileChange(null)
     if (inputRef.current) inputRef.current.value = ''
   }
 
-  const displayUrl = preview ?? existingPhotoUrl ?? null
+  const displayUrl = cleared ? null : (preview ?? existingPhotoUrl ?? null)
   const isUploading = uploadProgress !== undefined && uploadProgress > 0 && uploadProgress < 100
 
   return (
