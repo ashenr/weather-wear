@@ -12,6 +12,7 @@ import {
   Center,
   Text,
 } from '@chakra-ui/react'
+import { FirebaseError } from 'firebase/app'
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage'
 import { ItemForm } from '../components/wardrobe/ItemForm'
 import { getWardrobeItem, updateWardrobeItem, deleteWardrobeItem } from '../lib/wardrobe'
@@ -81,7 +82,15 @@ export function ItemDetailPage() {
       } else if (photoRemoved) {
         // Delete old photo from storage if it exists
         if (item.photoPath) {
-          try { await deleteObject(storageRef(storage, item.photoPath)) } catch { /* already gone */ }
+          try {
+            await deleteObject(storageRef(storage, item.photoPath))
+          } catch (err) {
+            if (!(err instanceof FirebaseError) || err.code !== 'storage/object-not-found') {
+              // Unexpected error — rethrow so photoPath is not cleared in Firestore
+              throw err
+            }
+            // object already gone — safe to proceed
+          }
         }
         photoUrl = ''
         photoPath = undefined
