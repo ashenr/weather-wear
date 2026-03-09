@@ -162,7 +162,7 @@ export const getDailySuggestion = onCall(
 - Include the structured JSON output format instruction
 
 ### 5f. Call Gemini API
-- Use `gemini-2.0-flash` model (fast, cost-effective for this use case)
+- Use `gemini-2.5-flash-lite` model (fast, cost-effective for this use case)
 - Set `responseMimeType: "application/json"` for structured output
 - Parse and validate response with retry:
   1. Parse JSON in a try/catch — if invalid JSON, retry once with a stricter prompt ("You MUST return valid JSON only")

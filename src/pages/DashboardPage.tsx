@@ -6,13 +6,18 @@ import {
   Button,
   Center,
   Heading,
+  Separator,
+  Skeleton,
   Spinner,
   Text,
   VStack,
 } from '@chakra-ui/react'
 import { db, functions } from '../lib/firebase'
+import { getDailySuggestion } from '../lib/suggestion'
 import { WeatherCard } from '../components/WeatherCard'
+import { SuggestionCard } from '../components/SuggestionCard'
 import type { WeatherCache } from '../types/weather'
+import type { DailySuggestion } from '../types/suggestion'
 
 function getTodayOslo(): string {
   return new Intl.DateTimeFormat('sv-SE', {
@@ -22,9 +27,12 @@ function getTodayOslo(): string {
 
 export function DashboardPage() {
   const [weather, setWeather] = useState<WeatherCache | null>(null)
+  const [suggestion, setSuggestion] = useState<DailySuggestion | null>(null)
   const [loading, setLoading] = useState(true)
+  const [loadingSuggestion, setLoadingSuggestion] = useState(false)
   const [fetching, setFetching] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [suggestionError, setSuggestionError] = useState<string | null>(null)
   const today = getTodayOslo()
 
   const loadWeather = async () => {
@@ -38,9 +46,32 @@ export function DashboardPage() {
     }
   }
 
+  const loadSuggestion = async () => {
+    setLoadingSuggestion(true)
+    setSuggestionError(null)
+    try {
+      const result = await getDailySuggestion()
+      setSuggestion(result)
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error && err.message.includes('wardrobe is empty')
+          ? 'Add wardrobe items to receive a clothing suggestion.'
+          : 'Failed to generate suggestion. Please try again.'
+      setSuggestionError(msg)
+    } finally {
+      setLoadingSuggestion(false)
+    }
+  }
+
   useEffect(() => {
     loadWeather()
   }, [])
+
+  useEffect(() => {
+    if (weather) {
+      loadSuggestion()
+    }
+  }, [weather])
 
   const handleFetchWeather = async () => {
     setFetching(true)
@@ -82,6 +113,28 @@ export function DashboardPage() {
             >
               Refresh Weather
             </Button>
+
+            <Separator />
+
+            {loadingSuggestion ? (
+              <VStack align="stretch" gap={3}>
+                <Skeleton height="24px" width="160px" />
+                <Skeleton height="80px" borderRadius="md" />
+                <Skeleton height="80px" borderRadius="md" />
+                <Skeleton height="80px" borderRadius="md" />
+              </VStack>
+            ) : suggestionError ? (
+              <VStack gap={3} align="flex-start">
+                <Text color="fg.muted">{suggestionError}</Text>
+                {!suggestionError.includes('wardrobe') && (
+                  <Button size="sm" variant="outline" onClick={loadSuggestion}>
+                    Retry Suggestion
+                  </Button>
+                )}
+              </VStack>
+            ) : suggestion ? (
+              <SuggestionCard suggestion={suggestion} />
+            ) : null}
           </>
         ) : (
           <VStack gap={4} py={8} align="center">

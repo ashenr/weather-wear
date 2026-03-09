@@ -4,6 +4,9 @@ import { ProtectedRoute } from './components/ProtectedRoute'
 import { Layout } from './components/Layout'
 import { LoginPage } from './pages/LoginPage'
 import { DashboardPage } from './pages/DashboardPage'
+import { WardrobePage } from './pages/WardrobePage'
+import { AddItemPage } from './pages/AddItemPage'
+import { ItemDetailPage } from './pages/ItemDetailPage'
 
 function App() {
   return (
@@ -17,6 +20,36 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <DashboardPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/wardrobe"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <WardrobePage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/wardrobe/add"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <AddItemPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/wardrobe/:id"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ItemDetailPage />
                 </Layout>
               </ProtectedRoute>
             }

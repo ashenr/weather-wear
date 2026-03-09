@@ -63,7 +63,7 @@ export const crawlProductUrl = onCall(
 ### 1d. Gemini extraction (`extractionPrompt.ts`)
 - Use the extraction prompt from the spec
 - Call Gemini with `responseMimeType: "application/json"`
-- Model: `gemini-2.0-flash` (fast, good at structured extraction)
+- Model: `gemini-2.5-flash-lite` (fast, good at structured extraction)
 - Parse and validate with retry:
   1. Parse JSON in a try/catch — if invalid JSON, retry once with stricter prompt
   2. Validate field values:

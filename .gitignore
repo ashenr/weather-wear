@@ -75,3 +75,6 @@ dist/
 .DS_Store
 
 .idea/
+
+# Local secrets for emulator
+functions/.secret.local

@@ -43,7 +43,7 @@ Personal clothing suggestion app for Oslo, Norway. Recommends outerwear/layering
 
 ## Gemini Integration
 
-- Model: `gemini-2.0-flash` (structured JSON output via `responseMimeType: "application/json"`)
+- Model: `gemini-2.5-flash-lite` (structured JSON output via `responseMimeType: "application/json"`)
 - Always validate Gemini responses: parse JSON in try/catch, retry once on failure, then graceful fallback
 - For suggestions: validate `itemId` references exist in wardrobe; fallback to text-only advice if validation fails
 - For product extraction: validate enum fields (`category`, `waterproof`), coerce or null invalid values
