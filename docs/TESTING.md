@@ -312,7 +312,7 @@ Use the real Firestore emulator. Seed with helpers, clear between tests:
 ```typescript
 // Clear via emulator REST endpoint
 await fetch(
-  "http://127.0.0.1:8080/emulator/v1/projects/smart-display-172af/databases/(default)/documents",
+  "http://127.0.0.1:8080/emulator/v1/projects/<your-firebase-project>/databases/(default)/documents",
   { method: "DELETE" }
 );
 ```
@@ -426,7 +426,7 @@ Or use `firebase emulators:exec` to run in one command:
 ```bash
 firebase emulators:exec --only firestore,auth \
   "cd functions && npm run test:integration" \
-  --project smart-display-172af
+  --project <your-firebase-project>
 ```
 
 ---

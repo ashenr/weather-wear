@@ -8,7 +8,7 @@
 
 ## Prerequisites
 
-- Firebase project `smart-display-172af` exists (confirmed)
+- Firebase project `<your-firebase-project>` exists (confirmed)
 - Cloud Functions scaffold exists with Node 24 (confirmed)
 - Firebase Hosting configured with `public/` directory (confirmed)
 

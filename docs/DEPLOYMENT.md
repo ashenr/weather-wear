@@ -5,7 +5,7 @@
 - Firebase CLI installed: `npm install -g firebase-tools`
 - Logged into Firebase CLI: `firebase login`
 - Node.js 24+
-- Firebase project `smart-display-172af` configured (see `.firebaserc`)
+- Firebase project `<your-firebase-project>` configured (see `.firebaserc`)
 
 ## Environment Setup
 
@@ -192,9 +192,9 @@ Two gitignored files are needed for local development:
 
 ```bash
 VITE_FIREBASE_API_KEY=...
-VITE_FIREBASE_AUTH_DOMAIN=smart-display-172af.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=smart-display-172af
-VITE_FIREBASE_STORAGE_BUCKET=smart-display-172af.firebasestorage.app
+VITE_FIREBASE_AUTH_DOMAIN=<your-firebase-project>.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=<your-firebase-project>
+VITE_FIREBASE_STORAGE_BUCKET=<your-firebase-project>.firebasestorage.app
 VITE_FIREBASE_MESSAGING_SENDER_ID=...
 VITE_FIREBASE_APP_ID=...
 ```
@@ -278,7 +278,7 @@ Functions are accessible via the emulator:
 
 - Callable functions: invoked through the Firebase client SDK connected to the emulator
 - Scheduled functions: can be triggered manually via the Emulator UI (http://localhost:4000)
-- HTTP functions: accessible at `http://localhost:5001/smart-display-172af/europe-west1/{functionName}`
+- HTTP functions: accessible at `http://localhost:5001/<your-firebase-project>/europe-west1/{functionName}`
 
 ## Rollback
 
@@ -321,7 +321,7 @@ cd functions && npm run test:integration
 # Option 2: one command
 firebase emulators:exec --only firestore,auth \
   "cd functions && npm run test:integration" \
-  --project smart-display-172af
+  --project <your-firebase-project>
 ```
 
 ### Frontend Tests

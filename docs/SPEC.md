@@ -33,7 +33,7 @@ A web app that:
 
 **Dev tooling:** Chakra UI MCP server is used during development for AI-assisted component generation and referencing Chakra's component API.
 
-**Firebase project:** `smart-display-172af`
+**Firebase project:** `<your-firebase-project>`
 
 ---
 

@@ -114,7 +114,7 @@ graph TD
 
 - **Node.js** v18+
 - **Firebase CLI** — `npm install -g firebase-tools`
-- A Firebase project (default: `smart-display-172af`)
+- A Firebase project with Firestore, Auth (Google sign-in), Cloud Functions, and Cloud Storage enabled
 - Google Gemini API Key
 
 ### Installation
@@ -130,20 +130,30 @@ graph TD
    npm install
    ```
 
-3. **Configure environment variables:**
+3. **Configure Firebase project:**
+   Create a `.firebaserc` file in the project root pointing to your Firebase project:
+   ```json
+   {
+     "projects": {
+       "default": "your-firebase-project-id"
+     }
+   }
+   ```
+
+4. **Configure environment variables:**
    Copy `.env.example` to `.env.local` and fill in your Firebase and Gemini credentials.
 
-4. **Start Firebase Emulators:**
+5. **Start Firebase Emulators:**
    ```bash
    ./emulators.sh
    ```
 
-5. **Run the development server:**
+6. **Run the development server:**
    ```bash
    npm run dev
    ```
 
-6. Open `http://localhost:5173` in your browser.
+7. Open `http://localhost:5173` in your browser.
 
 ---
 
@@ -172,4 +182,4 @@ npm run test:coverage
 
 ## 📄 License
 
-This project was built for educational / demonstration purposes of an end-to-end AI-powered workflow.
+This project is licensed under the [MIT License](LICENSE).

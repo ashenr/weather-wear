@@ -11,7 +11,7 @@ Personal clothing suggestion app for Oslo, Norway. Recommends outerwear/layering
 - AI: Google Gemini API
 - Weather: yr.no Locationforecast 2.0 (`complete` endpoint)
 - Hosting: Firebase Hosting
-- Firebase project: `smart-display-172af`
+- Firebase project: `<your-firebase-project>`
 
 ## Project Structure
 
@@ -72,7 +72,7 @@ Full strategy in `docs/TESTING.md`. Summary:
 ## Conventions
 
 - Cloud Functions region: `europe-west1`
-- yr.no User-Agent: `WeatherWear/1.0 github.com/ashenw/weatherwear`
+- yr.no User-Agent: `WeatherWear/1.0 github.com/<your-username>/weatherwear`
 - yr.no timestamps are UTC — convert to `Europe/Oslo` timezone before grouping into periods
 - yr.no: respect `Expires`/`Last-Modified` headers; use `If-Modified-Since` for conditional requests
 - Firestore doc IDs for dated collections: `YYYY-MM-DD`

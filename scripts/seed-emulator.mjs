@@ -14,7 +14,7 @@
  *   - users/{USER_ID}/feedback   (7 entries for past 7 days)
  */
 
-const PROJECT = 'smart-display-172af'
+const PROJECT = 'your-firebase-project-id' // Replace with your Firebase project ID
 const FIRESTORE_BASE = `http://localhost:8080/v1/projects/${PROJECT}/databases/(default)/documents`
 const AUTH_BASE = `http://localhost:9099/identitytoolkit.googleapis.com/v1/projects/${PROJECT}`
 const HEADERS = { 'Content-Type': 'application/json', Authorization: 'Bearer owner' }

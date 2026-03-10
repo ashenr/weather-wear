@@ -10,12 +10,8 @@ firebase-debug.*.log*
 # Firebase cache
 .firebase/
 
-# Firebase config
-
-# Uncomment this if you'd like others to create their own Firebase project.
-# For a team working on the same Firebase project(s), it is recommended to leave
-# it commented so all members can deploy to the same project(s) in .firebaserc.
-# .firebaserc
+# Firebase config — each contributor creates their own .firebaserc
+.firebaserc
 
 # Runtime data
 pids
@@ -82,3 +78,12 @@ functions/.secret.local
 
 # Firebase emulator data export
 emulator-data/
+
+# AI tooling — personal settings
+.claude/settings.json
+
+# Project memory (AI assistant context)
+memory/
+
+# Firestore emulator log
+firestore-debug.log
