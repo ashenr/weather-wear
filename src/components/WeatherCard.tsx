@@ -37,7 +37,7 @@ const CONDITION_LABELS: Record<string, string> = {
 }
 
 function PeriodMiniCard({ period }: { period: PeriodData }) {
-  if (!period.temp) return null // Skip empty periods if any
+  if (period.temp == null) return null // Skip empty periods if any (allow 0°C)
   
   return (
     <VStack 
