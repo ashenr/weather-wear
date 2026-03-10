@@ -1,4 +1,4 @@
-# Smart Display
+# WeatherWear
 
 Personal clothing suggestion app for Oslo, Norway. Recommends outerwear/layering based on full-day weather forecast using Gemini AI.
 
@@ -72,7 +72,7 @@ Full strategy in `docs/TESTING.md`. Summary:
 ## Conventions
 
 - Cloud Functions region: `europe-west1`
-- yr.no User-Agent: `SmartDisplay/1.0 github.com/ashenw/smart-display`
+- yr.no User-Agent: `WeatherWear/1.0 github.com/ashenw/weatherwear`
 - yr.no timestamps are UTC — convert to `Europe/Oslo` timezone before grouping into periods
 - yr.no: respect `Expires`/`Last-Modified` headers; use `If-Modified-Since` for conditional requests
 - Firestore doc IDs for dated collections: `YYYY-MM-DD`

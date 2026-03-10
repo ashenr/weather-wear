@@ -1,1 +1,1 @@
-export const APP_NAME = import.meta.env.VITE_APP_NAME ?? 'Smart Display'
+export const APP_NAME = import.meta.env.VITE_APP_NAME ?? 'WeatherWear'
