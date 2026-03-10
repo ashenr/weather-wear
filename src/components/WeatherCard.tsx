@@ -79,8 +79,9 @@ function PeriodMiniCard({ period }: { period: PeriodData }) {
 export function WeatherCard({ weather }: { weather: WeatherCache }) {
   const { summary, periods, conditionType, windWarning } = weather
 
-  const minFeelsLike = Math.min(...periods.map(p => p.feelsLike))
-  const maxFeelsLike = Math.max(...periods.map(p => p.feelsLike))
+  const hasPeriods = periods.length > 0
+  const minFeelsLike = hasPeriods ? Math.min(...periods.map(p => p.feelsLike)) : summary.feelsLike
+  const maxFeelsLike = hasPeriods ? Math.max(...periods.map(p => p.feelsLike)) : summary.feelsLike
 
   return (
     <VStack align="stretch" gap={4}>
