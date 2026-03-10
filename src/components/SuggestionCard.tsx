@@ -93,13 +93,16 @@ export function SuggestionCard({ suggestion }: SuggestionCardProps) {
                 <Text fontSize="xs" color="whiteAlpha.600" fontWeight="bold" textTransform="uppercase" letterSpacing="widest" mb={3}>
                   Accessories
                 </Text>
-                <Flex gap={2} wrap="wrap">
+                <VStack align="stretch" gap={3}>
                   {s.accessories.map((acc, i) => (
-                    <Badge colorPalette="gray" variant="surface" border="none" bg="whiteAlpha.200" color="white" key={i} px={3} py={1} borderRadius="full">
-                      {acc.name ?? acc.itemId}
-                    </Badge>
+                    <Box key={i}>
+                      <Text fontWeight="semibold" fontSize="md">{acc.name ?? acc.itemId}</Text>
+                      <Text fontSize="sm" color="whiteAlpha.600" mt={1} maxW="90%">
+                        {acc.reasoning}
+                      </Text>
+                    </Box>
                   ))}
-                </Flex>
+                </VStack>
               </Box>
             )}
           </Flex>
