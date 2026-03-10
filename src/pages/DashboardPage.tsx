@@ -5,6 +5,7 @@ import { httpsCallable } from 'firebase/functions'
 import {
   Box,
   Button,
+  Flex,
   Heading,
   Separator,
   Skeleton,
@@ -104,50 +105,51 @@ export function DashboardPage() {
   return (
     <Box maxW="600px" mx="auto" px={4} py={6}>
       <VStack align="stretch" gap={6}>
-        <Heading size="lg">Today — {today}</Heading>
+        <Flex justify="space-between" align="baseline" mb={2}>
+          <Heading size="xl" color="brand.navy" letterSpacing="tight">
+            Overview
+          </Heading>
+          <Text color="fg.subtle" fontSize="sm" fontWeight="medium">{today}</Text>
+        </Flex>
 
         {error && <Text color="red.500">{error}</Text>}
 
-        {weather ? (
+        {loadingSuggestion ? (
+          <VStack align="stretch" gap={3}>
+            <Skeleton height="350px" borderRadius="2xl" />
+            <Skeleton height="150px" borderRadius="2xl" mt={4} />
+          </VStack>
+        ) : suggestionError ? (
+          <VStack gap={4} p={8} align="center" bg="bg.muted" borderRadius="2xl">
+            <Text color="fg.muted" textAlign="center">{suggestionError}</Text>
+            {suggestionError.includes('wardrobe') ? (
+              <Button size="lg" colorPalette="blue" asChild borderRadius="xl">
+                <RouterLink to="/wardrobe/add">
+                  Add Items to Wardrobe
+                </RouterLink>
+              </Button>
+            ) : (
+              <Button size="sm" variant="outline" onClick={loadSuggestion}>
+                Retry Suggestion
+              </Button>
+            )}
+          </VStack>
+        ) : weather && suggestion ? (
           <>
+            <SuggestionCard suggestion={suggestion} />
+            <Box h={2} /> {/* Spacer */}
             <WeatherCard weather={weather} />
             <Button
               onClick={handleFetchWeather}
               loading={fetching}
-              variant="outline"
+              variant="surface"
               size="sm"
               alignSelf="flex-start"
+              colorPalette="gray"
             >
-              Refresh Weather
+              Refresh Forecast
             </Button>
 
-            <Separator />
-
-            {loadingSuggestion ? (
-              <VStack align="stretch" gap={3}>
-                <Skeleton height="24px" width="160px" />
-                <Skeleton height="80px" borderRadius="md" />
-                <Skeleton height="80px" borderRadius="md" />
-                <Skeleton height="80px" borderRadius="md" />
-              </VStack>
-            ) : suggestionError ? (
-              <VStack gap={3} align="flex-start">
-                <Text color="fg.muted">{suggestionError}</Text>
-                {suggestionError.includes('wardrobe') ? (
-                  <Button size="sm" colorPalette="blue" asChild>
-                    <RouterLink to="/wardrobe/add">
-                      Add Items to Wardrobe
-                    </RouterLink>
-                  </Button>
-                ) : (
-                  <Button size="sm" variant="outline" onClick={loadSuggestion}>
-                    Retry Suggestion
-                  </Button>
-                )}
-              </VStack>
-            ) : suggestion ? (
-              <SuggestionCard suggestion={suggestion} />
-            ) : null}
           </>
         ) : (
           <VStack gap={4} py={8} align="center">

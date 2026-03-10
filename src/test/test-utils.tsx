@@ -1,11 +1,12 @@
 import { render, type RenderOptions } from '@testing-library/react'
-import { ChakraProvider, defaultSystem } from '@chakra-ui/react'
+import { ChakraProvider } from '@chakra-ui/react'
 import { MemoryRouter } from 'react-router-dom'
 import type { ReactElement } from 'react'
+import { system } from '../theme'
 
 function AllProviders({ children }: { children: React.ReactNode }) {
   return (
-    <ChakraProvider value={defaultSystem}>
+    <ChakraProvider value={system}>
       <MemoryRouter>{children}</MemoryRouter>
     </ChakraProvider>
   )

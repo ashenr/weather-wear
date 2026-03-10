@@ -68,14 +68,14 @@ export function BottomNav() {
                 pb={2}
                 minH="52px"
                 gap="2px"
-                color={isActive ? 'blue.500' : 'fg.muted'}
+                color={isActive ? 'brand.navy' : 'fg.muted'}
                 borderTopWidth="2px"
-                borderTopColor={isActive ? 'blue.500' : 'transparent'}
+                borderTopColor={isActive ? 'brand.navy' : 'transparent'}
                 transition="color 0.15s, border-color 0.15s"
-                _hover={{ color: isActive ? 'blue.500' : 'fg' }}
+                _hover={{ color: isActive ? 'brand.navy' : 'fg' }}
               >
                 <Icon size={22} />
-                <Text fontSize="10px" fontWeight={isActive ? 'semibold' : 'normal'} lineHeight="1">
+                <Text fontSize="10px" fontWeight={isActive ? 'bold' : 'medium'} letterSpacing="wide" lineHeight="1">
                   {label}
                 </Text>
               </Flex>
