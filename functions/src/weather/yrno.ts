@@ -2,7 +2,7 @@ import type {YrnoResponse} from './types.js'
 
 const YRNO_URL =
   'https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=59.9139&lon=10.7522'
-const USER_AGENT = 'SmartDisplay/1.0 github.com/ashenw/smart-display'
+const USER_AGENT = 'WeatherWear/1.0 github.com/ashenw/weatherwear'
 
 export interface YrnoFetchResult {
   data: YrnoResponse;

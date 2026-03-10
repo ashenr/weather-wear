@@ -1,8 +1,8 @@
-# Smart Display - Project Specification
+# WeatherWear - Project Specification
 
 ## Overview
 
-Smart Display is a personal clothing suggestion app that recommends outerwear and layering choices each morning based on the full-day weather forecast in Oslo, Norway. Designed for single-user use.
+WeatherWear is a personal clothing suggestion app that recommends outerwear and layering choices each morning based on the full-day weather forecast in Oslo, Norway. Designed for single-user use.
 
 ### Problem Statement
 
@@ -312,7 +312,7 @@ Pre-fetches and caches the day's weather forecast.
   3. Aggregate into 4 time periods (morning, daytime, afternoon, evening)
   4. Classify condition type using Oslo Logic rules
   5. Write to `weatherCache/{date}` (top-level collection)
-- **Headers:** `User-Agent: SmartDisplay/1.0 github.com/ashenw/smart-display`
+- **Headers:** `User-Agent: WeatherWear/1.0 github.com/ashenw/weatherwear`
 - **Error handling:** Retry once on failure; log error if retry fails
 
 ### `getDailySuggestion` — Callable
@@ -594,7 +594,7 @@ Important:
   - `symbol_code` — weather icon identifier (e.g., `cloudy`, `lightrainshowers_day`)
   - `air_temperature_min/max` (°C) — only in `next_6_hours`
 - Note: `next_1_hours` summaries are unavailable beyond 60-hour forecast range
-- Requires `User-Agent` header (e.g., `SmartDisplay/1.0 github.com/ashenw/smart-display`)
+- Requires `User-Agent` header (e.g., `WeatherWear/1.0 github.com/ashenw/weatherwear`)
 - Must respect `Expires` and `Last-Modified` headers; use `If-Modified-Since` for conditional requests
 - Terms: <https://developer.yr.no/doc/TermsOfService/>
 - Free, no API key required

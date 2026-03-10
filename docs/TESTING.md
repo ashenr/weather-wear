@@ -280,7 +280,7 @@ Mock `globalThis.fetch` via `vi.spyOn`. Use a captured fixture file (`test/fixtu
 
 ```bash
 # Capture fixture
-curl -H "User-Agent: SmartDisplay/1.0 github.com/ashenw/smart-display" \
+curl -H "User-Agent: WeatherWear/1.0 github.com/ashenw/weatherwear" \
   "https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=59.9139&lon=10.7522" \
   | jq '.properties.timeseries[:24]' > functions/test/fixtures/yrno-response.json
 ```

@@ -8,7 +8,7 @@
 
 The Google Agent Development Kit (GADK, `google/adk-js`) is a TypeScript-first framework for building AI agents. It shifts AI integration from monolithic prompt engineering to a "code-first" structure involving **Agents**, **Instructions**, and **Tools**.
 
-While the MVP of the Smart Display app uses the standard Firebase Vertex AI / Gemini SDK with monolithic prompts for speed to market and core logic validation, GADK is the recommended path for future iterations to improve maintainability, testing, and capability.
+While the MVP of the WeatherWear app uses the standard Firebase Vertex AI / Gemini SDK with monolithic prompts for speed to market and core logic validation, GADK is the recommended path for future iterations to improve maintainability, testing, and capability.
 
 ## Why GADK for Future Iterations?
 

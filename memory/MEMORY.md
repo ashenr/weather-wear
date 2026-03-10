@@ -1,4 +1,4 @@
-# Smart Display — Project Memory
+# WeatherWear — Project Memory
 
 ## Status
 - Phase 0 (Foundation) complete and verified end-to-end.

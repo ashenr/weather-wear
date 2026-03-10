@@ -160,7 +160,7 @@ export const fetchWeather = onCall({ region: "europe-west1" }, async (request) =
 
 ### 5a. yr.no API Client (`yrno.ts`)
 - Fetch from `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=59.9139&lon=10.7522`
-- Set `User-Agent: SmartDisplay/1.0 github.com/ashenw/smart-display`
+- Set `User-Agent: WeatherWear/1.0 github.com/ashenw/weatherwear`
 - Parse the JSON timeseries response
 - Handle HTTP errors and timeouts (10s timeout)
 - Respect `Expires` and `Last-Modified` headers; use `If-Modified-Since` for conditional requests
