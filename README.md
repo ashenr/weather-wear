@@ -1,6 +1,8 @@
 # WeatherWear 🌤️🧥
 
 > A personal clothing suggestion app that recommends outerwear and layering choices each morning based on the full-day weather forecast in Nordic climates.
+>
+> 🔗 **Live app:** [weatherwear.ashen.no](https://weatherwear.ashen.no/)
 
 <p align="center">
   <img src="docs/assets/mobile_dashboard.png" alt="WeatherWear Mobile Dashboard" width="250" />
@@ -66,23 +68,23 @@ A filterable, searchable grid of your clothing items showing warmth levels, weat
 ## 🏗️ Architecture
 
 ```mermaid
-graph TD
+graph LR
     %% Styling
     classDef react fill:#61dafb,stroke:#282c34,stroke-width:2px,color:#282c34,font-weight:bold
     classDef firebase fill:#ffca28,stroke:#f57c00,stroke-width:2px,color:#282c34,font-weight:bold
     classDef external fill:#e0e0e0,stroke:#9e9e9e,stroke-width:2px,color:#000
 
     %% React SPA
-    subgraph SPA[React SPA Vite]
+    subgraph SPA["React SPA (Vite)"]
         DB[Dashboard]:::react
-        W[Wardrobe]:::react
-        L[Login]:::react
+        WD[Wardrobe]:::react
+        FB[Feedback]:::react
     end
 
     %% Cloud Functions
-    subgraph CF[Firebase Cloud Functions]
+    subgraph CF[Cloud Functions]
         GDS[getDailySuggestion]:::firebase
-        FW[fetchWeather <br/> <i>Scheduled</i>]:::firebase
+        FW["fetchWeather (scheduled)"]:::firebase
         CPU[crawlProductUrl]:::firebase
         SF[submitFeedback]:::firebase
     end
@@ -92,17 +94,20 @@ graph TD
     YR[yr.no API]:::external
     GM[Gemini API]:::external
 
-    %% Connections
-    SPA -->|On open| GDS
-    SPA -->|On save| CF
-    SPA -->|Auth| L
-    
-    FW -->|Fetch hourly forecast| YR
-    FW -->|Cache data| FS
-    GDS -->|Read weather/wardrobe| FS
-    GDS -->|Generate suggestion| GM
-    CPU -->|Extract item details| GM
-    SF -->|Write comfort rating| FS
+    %% SPA → Functions
+    DB -->|Get suggestion| GDS
+    WD -->|Add via URL| CPU
+    FB -->|Log comfort| SF
+
+    %% Functions → External
+    FW -->|Fetch forecast| YR
+    GDS -->|Generate| GM
+    CPU -->|Extract| GM
+
+    %% Functions → Firestore
+    FW -->|Cache weather| FS
+    GDS -->|Read & write| FS
+    SF -->|Save feedback| FS
 ```
 
 **How it works:**

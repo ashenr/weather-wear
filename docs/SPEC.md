@@ -40,38 +40,49 @@ A web app that:
 ## System Architecture
 
 ```mermaid
-graph TD
+graph LR
     %% Styling
     classDef react fill:#61dafb,stroke:#282c34,stroke-width:2px,color:#282c34,font-weight:bold
     classDef firebase fill:#ffca28,stroke:#f57c00,stroke-width:2px,color:#282c34,font-weight:bold
     classDef external fill:#e0e0e0,stroke:#9e9e9e,stroke-width:2px,color:#000
 
     %% React SPA
-    subgraph SPA[React SPA <br/> Firebase Hosting]
-        DB[Dashboard <br/> View]:::react
-        W[Wardrobe <br/> List]:::react
-        A[Add Item <br/> URL / Manual]:::react
-        L[Login <br/> Google]:::react
+    subgraph SPA["React SPA · Firebase Hosting"]
+        DB[Dashboard]:::react
+        WD[Wardrobe]:::react
+        AI["Add Item (URL/Manual)"]:::react
+        FB[Feedback]:::react
+        LG["Login (Google)"]:::react
     end
 
     %% Cloud Functions
     subgraph CF[Firebase Cloud Functions]
-        GDS[getDailySuggestion <br/><br/> 1. Read weather <br/> 2. Classify Oslo Logic <br/> 3. Read wardrobe <br/> 4. Read feedback <br/> 5. Call Gemini <br/> 6. Cache result]:::firebase
-        CPU[crawlProductUrl <br/><br/> 1. Fetch URL HTML <br/> 2. Send to Gemini <br/> 3. Return item data]:::firebase
-        FW[fetchWeather <br/> Scheduled <br/><br/> Fetches yr.no hourly <br/> aggregates and caches]:::firebase
-        SF[submitFeedback <br/><br/> Records worn items <br/> + comfort rating]:::firebase
+        GDS[getDailySuggestion]:::firebase
+        FW["fetchWeather (Scheduled)"]:::firebase
+        CPU[crawlProductUrl]:::firebase
+        SF[submitFeedback]:::firebase
     end
 
     %% Storage & Externals
-    FS[(Firestore <br/><br/> - wardrobe <br/> - weather <br/> - suggest. <br/> - feedback)]:::firebase
+    FS[(Firestore)]:::firebase
     YR[yr.no API]:::external
-    GM[Google Gemini API <br/><br/> - extract product <br/> - generate suggest.]:::external
+    GM[Gemini API]:::external
 
-    %% Connections
-    SPA --> CF
-    CF --> FS
-    CF --> YR
-    CF --> GM
+    %% SPA → Functions
+    DB -->|Get suggestion| GDS
+    AI -->|Extract from URL| CPU
+    FB -->|Submit rating| SF
+
+    %% Functions → External APIs
+    FW -->|Fetch hourly forecast| YR
+    GDS -->|Generate suggestion| GM
+    CPU -->|Extract product data| GM
+
+    %% Functions → Firestore
+    FW -->|Cache weather| FS
+    GDS -->|Read weather, wardrobe, feedback · Write suggestion| FS
+    SF -->|Write feedback| FS
+    WD -->|CRUD items| FS
 ```
 
 **Data flow for daily suggestion:**
