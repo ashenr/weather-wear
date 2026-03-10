@@ -80,8 +80,8 @@ export function WeatherCard({ weather }: { weather: WeatherCache }) {
   const { summary, periods, conditionType, windWarning } = weather
 
   const hasPeriods = periods.length > 0
-  const minFeelsLike = hasPeriods ? Math.min(...periods.map(p => p.feelsLike)) : summary.feelsLike
-  const maxFeelsLike = hasPeriods ? Math.max(...periods.map(p => p.feelsLike)) : summary.feelsLike
+  const minFeelsLike = hasPeriods ? Math.min(...periods.map(p => p.feelsLike)) : summary.minTemp
+  const maxFeelsLike = hasPeriods ? Math.max(...periods.map(p => p.feelsLike)) : summary.maxTemp
 
   return (
     <VStack align="stretch" gap={4}>
