@@ -10,7 +10,7 @@ const PERIOD_LABELS: Record<string, string> = {
 }
 
 function getWeatherIcon(symbol: string) {
-  const props = { size: 24, strokeWidth: 2, color: "currentColor" }
+  const props = { size: 24, strokeWidth: 2, color: 'currentColor' }
   if (!symbol) return <LuCloud {...props} />
   const s = symbol.toLowerCase()
   
