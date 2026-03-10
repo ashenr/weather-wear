@@ -39,60 +39,39 @@ A web app that:
 
 ## System Architecture
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                     React SPA                           │
-│  (Firebase Hosting)                                     │
-│                                                         │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────┐  │
-│  │Dashboard │  │ Wardrobe │  │ Add Item │  │ Login  │  │
-│  │  View    │  │   List   │  │  (URL /  │  │(Google)│  │
-│  │          │  │          │  │  Manual) │  │        │  │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬───┘  │
-│       │              │             │              │      │
-└───────┼──────────────┼─────────────┼──────────────┼──────┘
-        │              │             │              │
-        ▼              ▼             ▼              ▼
-┌─────────────────────────────────────────────────────────┐
-│              Firebase Cloud Functions                    │
-│                                                         │
-│  ┌──────────────────┐  ┌────────────────────────────┐   │
-│  │  getDailySugges- │  │   crawlProductUrl          │   │
-│  │  tion            │  │                            │   │
-│  │                  │  │  1. Fetch URL HTML          │   │
-│  │  1. Read weather │  │  2. Send to Gemini for     │   │
-│  │  2. Classify     │  │     structured extraction  │   │
-│  │     (Oslo Logic) │  │  3. Return item data       │   │
-│  │  3. Read wardrobe│  │                            │   │
-│  │  4. Read feedback│  │                            │   │
-│  │     history      │  │                            │   │
-│  │  5. Call Gemini  │  │                            │   │
-│  │  6. Cache result │  └────────────────────────────┘   │
-│  └──────────────────┘                                   │
-│                                                         │
-│  ┌──────────────────┐  ┌────────────────────────────┐   │
-│  │  fetchWeather    │  │   submitFeedback           │   │
-│  │  (Scheduled)     │  │                            │   │
-│  │                  │  │  Records what user wore    │   │
-│  │  Fetches yr.no   │  │  + comfort rating          │   │
-│  │  hourly data,    │  │                            │   │
-│  │  aggregates into │  │                            │   │
-│  │  periods, caches │  │                            │   │
-│  └──────────────────┘  └────────────────────────────┘   │
-│                                                         │
-└─────────────────────┬───────────────────────────────────┘
-                      │
-         ┌────────────┼────────────────┐
-         ▼            ▼                ▼
-┌──────────────┐ ┌──────────┐  ┌─────────────┐
-│  Firestore   │ │  yr.no   │  │ Google      │
-│              │ │  API     │  │ Gemini API  │
-│  - wardrobe  │ │          │  │             │
-│  - weather   │ │          │  │ - extract   │
-│  - suggest.  │ │          │  │   product   │
-│  - feedback  │ │          │  │ - generate  │
-│              │ │          │  │   suggest.  │
-└──────────────┘ └──────────┘  └─────────────┘
+```mermaid
+graph TD
+    %% Styling
+    classDef react fill:#61dafb,stroke:#282c34,stroke-width:2px,color:#282c34,font-weight:bold
+    classDef firebase fill:#ffca28,stroke:#f57c00,stroke-width:2px,color:#282c34,font-weight:bold
+    classDef external fill:#e0e0e0,stroke:#9e9e9e,stroke-width:2px,color:#000
+
+    %% React SPA
+    subgraph SPA[React SPA <br/> Firebase Hosting]
+        DB[Dashboard <br/> View]:::react
+        W[Wardrobe <br/> List]:::react
+        A[Add Item <br/> URL / Manual]:::react
+        L[Login <br/> Google]:::react
+    end
+
+    %% Cloud Functions
+    subgraph CF[Firebase Cloud Functions]
+        GDS[getDailySuggestion <br/><br/> 1. Read weather <br/> 2. Classify Oslo Logic <br/> 3. Read wardrobe <br/> 4. Read feedback <br/> 5. Call Gemini <br/> 6. Cache result]:::firebase
+        CPU[crawlProductUrl <br/><br/> 1. Fetch URL HTML <br/> 2. Send to Gemini <br/> 3. Return item data]:::firebase
+        FW[fetchWeather <br/> Scheduled <br/><br/> Fetches yr.no hourly <br/> aggregates and caches]:::firebase
+        SF[submitFeedback <br/><br/> Records worn items <br/> + comfort rating]:::firebase
+    end
+
+    %% Storage & Externals
+    FS[(Firestore <br/><br/> - wardrobe <br/> - weather <br/> - suggest. <br/> - feedback)]:::firebase
+    YR[yr.no API]:::external
+    GM[Google Gemini API <br/><br/> - extract product <br/> - generate suggest.]:::external
+
+    %% Connections
+    SPA --> CF
+    CF --> FS
+    CF --> YR
+    CF --> GM
 ```
 
 **Data flow for daily suggestion:**

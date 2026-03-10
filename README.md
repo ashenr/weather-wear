@@ -3,8 +3,7 @@
 > A personal clothing suggestion app that recommends outerwear and layering choices each morning based on the full-day weather forecast in Nordic climates.
 
 <p align="center">
-  <img src="docs/assets/dashboard.png" alt="WeatherWear Dashboard" width="500" />
-  <img src="docs/assets/mobile_dashboard.png" alt="WeatherWear Mobile Dashboard" width="232" />
+  <img src="docs/assets/mobile_dashboard.png" alt="WeatherWear Mobile Dashboard" width="250" />
 </p>
 
 ## 🌟 Overview
@@ -29,21 +28,18 @@ This application takes the guesswork out of morning routines by analyzing the fu
 The dashboard shows today's AI-generated outfit suggestion with detailed reasoning for each layer, optimized for the current weather conditions.
 
 <p align="center">
-  <img src="docs/assets/dashboard.png" alt="Dashboard - Outfit of the Day" width="500" />
-  <img src="docs/assets/mobile_dashboard.png" alt="Mobile Dashboard - Outfit of the Day" width="232" />
+  <img src="docs/assets/mobile_dashboard.png" alt="Mobile Dashboard - Outfit of the Day" width="250" />
 </p>
 
 <p align="center">
-  <img src="docs/assets/dashboard_suggestion.png" alt="Dashboard - AI Advice & Weather" width="500" />
-  <img src="docs/assets/mobile_dashboard_suggestion.png" alt="Mobile Dashboard - AI Advice" width="232" />
+  <img src="docs/assets/mobile_dashboard_suggestion.png" alt="Mobile Dashboard - AI Advice" width="250" />
 </p>
 
 ### Wardrobe Management
 A filterable, searchable grid of your clothing items showing warmth levels, weather properties, and temperature ranges at a glance.
 
 <p align="center">
-  <img src="docs/assets/wardrobe.png" alt="Wardrobe Management" width="500" />
-  <img src="docs/assets/mobile_wardrobe.png" alt="Mobile Wardrobe Management" width="232" />
+  <img src="docs/assets/mobile_wardrobe.png" alt="Mobile Wardrobe Management" width="250" />
 </p>
 
 ---
@@ -65,25 +61,44 @@ A filterable, searchable grid of your clothing items showing warmth levels, weat
 
 ## 🏗️ Architecture
 
-```
-┌─────────────────────────────────┐
-│        React SPA (Vite)         │
-│    Dashboard │ Wardrobe │ Login │
-└──────────────┬──────────────────┘
-               │
-    ┌──────────▼──────────┐
-    │  Firebase Cloud Fns  │
-    │                      │
-    │  • getDailySuggestion│
-    │  • fetchWeather      │
-    │  • crawlProductUrl   │
-    │  • submitFeedback    │
-    └──┬───────┬───────┬───┘
-       │       │       │
-  ┌────▼──┐ ┌─▼────┐ ┌▼─────────┐
-  │Firestr│ │yr.no │ │Gemini API│
-  │  ore  │ │ API  │ │          │
-  └───────┘ └──────┘ └──────────┘
+```mermaid
+graph TD
+    %% Styling
+    classDef react fill:#61dafb,stroke:#282c34,stroke-width:2px,color:#282c34,font-weight:bold
+    classDef firebase fill:#ffca28,stroke:#f57c00,stroke-width:2px,color:#282c34,font-weight:bold
+    classDef external fill:#e0e0e0,stroke:#9e9e9e,stroke-width:2px,color:#000
+
+    %% React SPA
+    subgraph SPA[React SPA Vite]
+        DB[Dashboard]:::react
+        W[Wardrobe]:::react
+        L[Login]:::react
+    end
+
+    %% Cloud Functions
+    subgraph CF[Firebase Cloud Functions]
+        GDS[getDailySuggestion]:::firebase
+        FW[fetchWeather <br/> <i>Scheduled</i>]:::firebase
+        CPU[crawlProductUrl]:::firebase
+        SF[submitFeedback]:::firebase
+    end
+
+    %% Storage & Externals
+    FS[(Firestore)]:::firebase
+    YR[yr.no API]:::external
+    GM[Gemini API]:::external
+
+    %% Connections
+    SPA -->|On open| GDS
+    SPA -->|On save| CF
+    SPA -->|Auth| L
+    
+    FW -->|Fetch hourly forecast| YR
+    FW -->|Cache data| FS
+    GDS -->|Read weather/wardrobe| FS
+    GDS -->|Generate suggestion| GM
+    CPU -->|Extract item details| GM
+    SF -->|Write comfort rating| FS
 ```
 
 **How it works:**
