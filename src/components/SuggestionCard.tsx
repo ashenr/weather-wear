@@ -108,7 +108,7 @@ export function SuggestionCard({ suggestion }: SuggestionCardProps) {
         {/* Advice Footer */}
         <Box bg="blackAlpha.300" p={5}>
           <Text fontSize="sm" fontStyle="italic" color="whiteAlpha.900">
-            "{s.overallAdvice}"
+            {s.overallAdvice}
           </Text>
         </Box>
 
