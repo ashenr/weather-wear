@@ -6,11 +6,15 @@
   <img src="docs/assets/mobile_dashboard.png" alt="WeatherWear Mobile Dashboard" width="250" />
 </p>
 
-## 🌟 Overview
+## 🌟 The Problem
 
-**WeatherWear** was born out of a simple problem: deciding what to wear in highly variable climates (like Oslo, Norway) can be challenging — especially if you've migrated from a warmer region. The same -5°C can feel completely different depending on moisture and wind.
+After migrating from Sri Lanka to Oslo 3 years ago, deciding what jacket to wear, how many layers to put on, and what accessories to bring remains a **daily challenge**. Norwegian weather varies significantly and requires wardrobe decisions that aren't intuitive for someone from a tropical climate.
 
-This application takes the guesswork out of morning routines by analyzing the full-day weather forecast and providing personalized outerwear and layering recommendations tailored to your specific wardrobe, local weather logic, and personal comfort preferences — all powered by Google Gemini AI.
+The same **-5°C** can feel completely different depending on moisture and wind — a dry, calm morning is manageable in a fleece and shell, but add sleet and 10 m/s gusts and you'll be miserable without full waterproof layers.
+
+## 💡 The Solution
+
+**WeatherWear** takes the guesswork out of your morning routine. It analyzes the **full-day weather forecast**, classifies conditions using Nordic-specific logic (*Wet Slush*, *Windy Cold*, *Dry Cold*, etc.), and generates **personalized layering recommendations** from your actual wardrobe — powered by Google Gemini AI. Over time, it learns your personal cold tolerance through a feedback loop, so suggestions get better the more you use it.
 
 ## ✨ Features
 
