@@ -1,8 +1,8 @@
-# WeatherWear 🌤️🧥
+# <img src="public/favicon.svg" width="32" height="32" alt="WeatherWear icon" /> WeatherWear
 
-> A personal clothing suggestion app that recommends outerwear and layering choices each morning based on the full-day weather forecast in Nordic climates.
->
-> 🔗 **Live app:** [weatherwear.ashen.no](https://weatherwear.ashen.no/)
+A personal clothing suggestion app that recommends outerwear and layering choices each morning based on the full-day weather forecast in Nordic climates.
+
+🔗 **Live app:** [weatherwear.ashen.no](https://weatherwear.ashen.no/)
 
 <p align="center">
   <img src="docs/assets/mobile_dashboard.png" alt="WeatherWear Mobile Dashboard" width="250" />
