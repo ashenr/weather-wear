@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom'
 import { FcGoogle } from 'react-icons/fc'
 import { useAuth } from '../contexts/AuthContext'
 import { BrandLogo } from '../components/BrandLogo'
+import { APP_NAME } from '../config'
 
 export function LoginPage() {
   const { user, loading, signIn } = useAuth()
@@ -24,7 +25,7 @@ export function LoginPage() {
       <VStack gap={8} p={10} bg="white" borderRadius="3xl" boxShadow="sm" maxW="md" w="full" mx={4}>
         <VStack gap={4}>
           <BrandLogo width="64" height="64" />
-          <Heading size="3xl" color="brand.navy" letterSpacing="tighter">WeatherWear</Heading>
+          <Heading size="3xl" color="brand.navy" letterSpacing="tighter">{APP_NAME}</Heading>
           <Text color="fg.muted" textAlign="center" fontSize="lg">
             Smarter daily outfit choices for any conditions.
           </Text>
