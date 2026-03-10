@@ -1,7 +1,8 @@
-import { Button, Flex, Heading, HStack, Link, Text } from '@chakra-ui/react'
+import { Box, Flex, Heading, HStack, Link, Text } from '@chakra-ui/react'
 import { Link as RouterLink, useLocation } from 'react-router-dom'
+import { FiLogOut } from 'react-icons/fi'
 import { useAuth } from '../contexts/AuthContext'
-import { APP_NAME } from '../config'
+import { BrandLogo } from './BrandLogo'
 
 function NavLink({ to, label }: { to: string; label: string }) {
   const { pathname } = useLocation()
@@ -12,9 +13,11 @@ function NavLink({ to, label }: { to: string; label: string }) {
       <RouterLink to={to}>
         <Text
           fontSize="sm"
-          fontWeight={isActive ? 'semibold' : 'normal'}
-          color={isActive ? 'blue.500' : 'fg.muted'}
-          _hover={{ color: 'fg' }}
+          fontWeight={isActive ? 'bold' : 'medium'}
+          color={isActive ? 'brand.navy' : 'fg.muted'}
+          _hover={{ color: 'brand.slate' }}
+          textTransform="uppercase"
+          letterSpacing="widest"
         >
           {label}
         </Text>
@@ -25,18 +28,32 @@ function NavLink({ to, label }: { to: string; label: string }) {
 
 export function Header() {
   const { user, signOut } = useAuth()
+  
+  const displayName = user?.displayName || user?.email?.split('@')[0] || 'User'
+  const initial = displayName.charAt(0).toUpperCase()
 
   return (
     <Flex
       as="header"
-      px={4}
-      py={3}
+      px={5}
+      py={4}
+      bg="rgba(255, 255, 255, 0.85)"
+      backdropFilter="blur(12px)"
       borderBottomWidth="1px"
+      borderColor="blackAlpha.100"
       align="center"
       justify="space-between"
+      position="sticky"
+      top={0}
+      zIndex="banner"
     >
       <HStack gap={6}>
-        <Heading size="md">{APP_NAME}</Heading>
+        <HStack gap={3}>
+          <BrandLogo />
+          <Heading size="lg" color="brand.navy" letterSpacing="tighter" fontWeight="bold">
+            WeatherWear
+          </Heading>
+        </HStack>
         {user && (
           <HStack gap={4} hideBelow="md">
             <NavLink to="/" label="Dashboard" />
@@ -45,16 +62,45 @@ export function Header() {
           </HStack>
         )}
       </HStack>
-      <Flex align="center" gap={3}>
-        {user && (
-          <Text fontSize="sm" color="fg.muted">
-            {user.email}
-          </Text>
-        )}
-        <Button onClick={signOut} variant="ghost" size="sm">
-          Sign out
-        </Button>
-      </Flex>
+      
+      {user && (
+        <HStack gap={4}>
+          <Flex align="center" gap={3}>
+            <Text fontSize="sm" color="brand.navy" fontWeight="semibold" hideBelow="sm">
+              {displayName}
+            </Text>
+            <Flex 
+              w="36px" 
+              h="36px" 
+              borderRadius="full" 
+              bg="brand.navy" 
+              color="white" 
+              align="center" 
+              justify="center" 
+              fontWeight="bold"
+              fontSize="sm"
+              boxShadow="sm"
+            >
+              {initial}
+            </Flex>
+          </Flex>
+
+          <Box w="1px" h="20px" bg="gray.200" />
+          
+          <Flex
+            as="button"
+            onClick={signOut}
+            color="fg.muted"
+            p={2}
+            borderRadius="full"
+            transition="all 0.2s"
+            _hover={{ color: 'red.500', bg: 'red.50' }}
+            aria-label="Sign out"
+          >
+            <FiLogOut size={20} strokeWidth={2.5} />
+          </Flex>
+        </HStack>
+      )}
     </Flex>
   )
 }

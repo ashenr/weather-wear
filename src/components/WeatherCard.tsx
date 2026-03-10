@@ -1,11 +1,28 @@
-import { Badge, Box, Grid, HStack, Text, VStack } from '@chakra-ui/react'
+import { Badge, Box, Flex, HStack, Text, VStack } from '@chakra-ui/react'
+import { LuSun, LuMoon, LuCloud, LuCloudRain, LuCloudSnow, LuCloudFog, LuCloudLightning } from 'react-icons/lu'
 import type { PeriodData, WeatherCache } from '../types/weather'
 
 const PERIOD_LABELS: Record<string, string> = {
-  morning: 'Morning (6–9)',
-  daytime: 'Daytime (9–15)',
-  afternoon: 'Afternoon (15–18)',
-  evening: 'Evening (18–21)',
+  morning: 'Morning',
+  daytime: 'Daytime',
+  afternoon: 'Afternoon',
+  evening: 'Evening',
+}
+
+function getWeatherIcon(symbol: string) {
+  const props = { size: 24, strokeWidth: 2, color: "currentColor" }
+  if (!symbol) return <LuCloud {...props} />
+  const s = symbol.toLowerCase()
+  
+  if (s.includes('thunder') || s.includes('lightning')) return <LuCloudLightning {...props} />
+  if (s.includes('rain') || s.includes('drizzle') || s.includes('shower')) return <LuCloudRain {...props} />
+  if (s.includes('snow') || s.includes('sleet') || s.includes('ice')) return <LuCloudSnow {...props} />
+  if (s.includes('fog')) return <LuCloudFog {...props} />
+  if (s.includes('cloud')) return <LuCloud {...props} />
+  if (s.includes('clear') || s.includes('sun') || s.includes('fair')) {
+    return s.includes('night') ? <LuMoon {...props} /> : <LuSun {...props} />
+  }
+  return <LuCloud {...props} />
 }
 
 const CONDITION_LABELS: Record<string, string> = {
@@ -19,80 +36,108 @@ const CONDITION_LABELS: Record<string, string> = {
   'dry-cold': 'Dry & Cold',
 }
 
-const CONDITION_COLORS: Record<string, string> = {
-  warm: 'orange',
-  'dry-mild': 'green',
-  'dry-cool': 'teal',
-  'windy-cold': 'gray',
-  'wet-slush': 'blue',
-  'wet-cold': 'cyan',
-  'mild-damp': 'purple',
-  'dry-cold': 'blue',
-}
-
-function PeriodCard({ period }: { period: PeriodData }) {
+function PeriodMiniCard({ period }: { period: PeriodData }) {
+  if (!period.temp) return null // Skip empty periods if any
+  
   return (
-    <Box borderWidth="1px" borderRadius="lg" p={4}>
-      <Text fontWeight="bold" mb={2}>
+    <VStack 
+      gap={1} 
+      p={3} 
+      bg="bg.muted" 
+      borderRadius="xl" 
+      align="center"
+      flex="1"
+    >
+      <Text fontSize="2xs" color="fg.muted" fontWeight="bold" textTransform="uppercase" letterSpacing="wider">
         {PERIOD_LABELS[period.name]}
       </Text>
-      <Grid templateColumns="1fr 1fr" gap={2} fontSize="sm">
-        <Text color="fg.muted">Temp</Text>
-        <Text>
-          {period.temp}°C (feels {period.feelsLike}°C)
+      
+      <Box color="brand.navy" my={1}>
+        {getWeatherIcon(period.symbol)}
+      </Box>
+
+      <Text fontWeight="bold" fontSize="lg" lineHeight="1">
+        {period.temp}°
+      </Text>
+
+      <Text fontSize="2xs" color="fg.muted" mt={-1}>
+        Feels {period.feelsLike}°
+      </Text>
+      
+      <Flex gap={2} mt={1}>
+        <Text fontSize="2xs" color="fg.subtle" fontWeight="medium">
+          {period.precipitation > 0 ? `${period.precipitation}mm` : '0mm'}
         </Text>
-        <Text color="fg.muted">Rain</Text>
-        <Text>
-          {period.precipitation}mm ({period.precipProbability}%)
+        <Text fontSize="2xs" color="fg.subtle" fontWeight="medium">
+          {period.wind}m/s
         </Text>
-        <Text color="fg.muted">Wind</Text>
-        <Text>
-          {period.wind} m/s (gust {period.windGust} m/s)
-        </Text>
-        <Text color="fg.muted">Symbol</Text>
-        <Text>{period.symbol}</Text>
-      </Grid>
-    </Box>
+      </Flex>
+    </VStack>
   )
 }
 
 export function WeatherCard({ weather }: { weather: WeatherCache }) {
   const { summary, periods, conditionType, windWarning } = weather
 
+  const minFeelsLike = Math.min(...periods.map(p => p.feelsLike))
+  const maxFeelsLike = Math.max(...periods.map(p => p.feelsLike))
+
   return (
     <VStack align="stretch" gap={4}>
-      <HStack>
-        <Badge colorPalette={CONDITION_COLORS[conditionType]} size="lg">
-          {CONDITION_LABELS[conditionType]}
-        </Badge>
-        {windWarning && (
-          <Badge colorPalette="red" size="lg">
-            Wind Warning
-          </Badge>
-        )}
-      </HStack>
+      
+      {/* Sleek Horizontal Main Weather Widget */}
+      <Box 
+        borderWidth="1px" 
+        borderColor="gray.200" 
+        borderRadius="2xl" 
+        p={5}
+        bg="white"
+        boxShadow="sm"
+      >
+        <Flex justify="space-between" align="center" wrap="wrap" gap={4}>
+          <VStack align="start" gap={0}>
+            <Text fontSize="5xl" fontWeight="bold" lineHeight="1" letterSpacing="tighter" color="brand.navy">
+              {summary.minTemp}°
+              <Text as="span" fontSize="2xl" color="brand.slate" ml={1}>/ {summary.maxTemp}°C</Text>
+            </Text>
+            <Text fontSize="xs" color="fg.muted" fontWeight="medium" mt={1}>
+              Feels like {minFeelsLike}° to {maxFeelsLike}°
+            </Text>
+            <HStack mt={2}>
+              <Text fontWeight="bold" color="brand.slate" textTransform="uppercase" letterSpacing="wider" fontSize="sm">
+                {CONDITION_LABELS[conditionType] || conditionType}
+              </Text>
+              {windWarning && (
+                <Badge colorPalette="orange" size="sm" variant="subtle" borderRadius="full">
+                  Wind Warning
+                </Badge>
+              )}
+            </HStack>
+          </VStack>
 
-      <Box borderWidth="1px" borderRadius="lg" p={4}>
-        <Text fontWeight="bold" mb={2}>
-          Daily Summary
-        </Text>
-        <Grid templateColumns="1fr 1fr" gap={2} fontSize="sm">
-          <Text color="fg.muted">Temperature</Text>
-          <Text>
-            {summary.minTemp}°C – {summary.maxTemp}°C
-          </Text>
-          <Text color="fg.muted">Total Rain</Text>
-          <Text>{summary.totalPrecipitation}mm</Text>
-          <Text color="fg.muted">Max Wind</Text>
-          <Text>{summary.maxWind} m/s</Text>
-          <Text color="fg.muted">Cloud Cover</Text>
-          <Text>{summary.avgCloudCover}%</Text>
-        </Grid>
+          <VStack align="end" gap={0}>
+            <Text fontSize="sm" color="fg.muted" fontWeight="medium">
+                PRECIP {summary.totalPrecipitation}mm
+            </Text>
+            <Text fontSize="sm" color="fg.muted" fontWeight="medium">
+                WIND {summary.maxWind}m/s
+            </Text>
+          </VStack>
+        </Flex>
       </Box>
 
-      {periods.map((period) => (
-        <PeriodCard key={period.name} period={period} />
-      ))}
+      {/* Forecast Periods */}
+      <Box>
+        <Text fontSize="xs" fontWeight="bold" color="fg.muted" textTransform="uppercase" letterSpacing="widest" mb={3}>
+          Forecast
+        </Text>
+        <HStack gap={3} align="stretch" overflowX="auto" pb={2}>
+          {periods.map((period) => (
+            <PeriodMiniCard key={period.name} period={period} />
+          ))}
+        </HStack>
+      </Box>
+
     </VStack>
   )
 }
