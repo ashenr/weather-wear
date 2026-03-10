@@ -3,6 +3,7 @@ import { Link as RouterLink, useLocation } from 'react-router-dom'
 import { FiLogOut } from 'react-icons/fi'
 import { useAuth } from '../contexts/AuthContext'
 import { BrandLogo } from './BrandLogo'
+import { APP_NAME } from '../config'
 
 function NavLink({ to, label }: { to: string; label: string }) {
   const { pathname } = useLocation()
@@ -51,7 +52,7 @@ export function Header() {
         <HStack gap={3}>
           <BrandLogo />
           <Heading size="lg" color="brand.navy" letterSpacing="tighter" fontWeight="bold">
-            WeatherWear
+            {APP_NAME}
           </Heading>
         </HStack>
         {user && (
