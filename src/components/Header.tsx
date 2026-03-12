@@ -1,4 +1,4 @@
-import { Box, Flex, Heading, HStack, Link, Text } from '@chakra-ui/react'
+import { Box, Flex, Heading, HStack, Link, Portal, Text, Tooltip } from '@chakra-ui/react'
 import { Link as RouterLink, useLocation } from 'react-router-dom'
 import { FiLogOut } from 'react-icons/fi'
 import { useAuth } from '../contexts/AuthContext'
@@ -70,20 +70,36 @@ export function Header() {
             <Text fontSize="sm" color="brand.navy" fontWeight="semibold" hideBelow="sm">
               {displayName}
             </Text>
-            <Flex 
-              w="36px" 
-              h="36px" 
-              borderRadius="full" 
-              bg="brand.navy" 
-              color="white" 
-              align="center" 
-              justify="center" 
-              fontWeight="bold"
-              fontSize="sm"
-              boxShadow="sm"
-            >
-              {initial}
-            </Flex>
+            <Tooltip.Root>
+              <Tooltip.Trigger asChild>
+                <Link asChild>
+                  <RouterLink to="/account">
+                    <Flex
+                      w="36px"
+                      h="36px"
+                      borderRadius="full"
+                      bg="brand.navy"
+                      color="white"
+                      align="center"
+                      justify="center"
+                      fontWeight="bold"
+                      fontSize="sm"
+                      boxShadow="sm"
+                      _hover={{ opacity: 0.85 }}
+                      transition="opacity 0.2s"
+                      aria-label="Account"
+                    >
+                      {initial}
+                    </Flex>
+                  </RouterLink>
+                </Link>
+              </Tooltip.Trigger>
+              <Portal>
+                <Tooltip.Positioner>
+                  <Tooltip.Content>Account</Tooltip.Content>
+                </Tooltip.Positioner>
+              </Portal>
+            </Tooltip.Root>
           </Flex>
 
           <Box w="1px" h="20px" bg="gray.200" />
