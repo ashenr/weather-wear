@@ -97,7 +97,7 @@ graph LR
 **Data flow for public snapshot (API key access):**
 
 1. External client sends `GET /getSnapshot?key=<apiKey>`
-2. `getSnapshot` HTTP function looks up the hashed key across `apiKeys` documents
+2. `getSnapshot` HTTP function looks up the hashed key via a `collectionGroup('apiKey')` query
 3. Validates the key is active and resolves the owning `userId`
 4. Reads `weatherCache/{today}` and `users/{userId}/suggestions/{today}`
 5. Returns combined weather + suggestion payload (no wardrobe or feedback data is exposed)
@@ -249,7 +249,7 @@ Users can generate a personal API key from the Account page (accessible by click
 
 - **One key per user** — generating a new key immediately invalidates the previous one
 - The raw key is shown **once** in the UI immediately after generation; it is never stored in plain text
-- Keys are stored as a SHA-256 hash in Firestore under `users/{userId}/apiKey` (a single document, not a subcollection)
+- Keys are stored as a SHA-256 hash in Firestore at `users/{userId}/apiKey/default` (a subcollection with a fixed document ID, enabling cross-user `collectionGroup` queries in `getSnapshot`)
 - The `getSnapshot` HTTP function validates incoming keys by hashing the candidate and searching for a matching document
 - Users can also **revoke** their key without generating a replacement (setting `active: false`)
 - The Account page shows: current key status (active / none), masked key suffix (last 4 chars), creation date, and buttons to generate/regenerate or revoke
@@ -314,7 +314,7 @@ users/{userId}
   │           weatherSummary,       // snapshot of weather that day
   │           note }
   │
-  └── apiKey (document — one per user, not a subcollection)
+  └── apiKey/default (subcollection with fixed doc ID "default" — one per user)
         └── { keyHash,             // SHA-256 hex digest of the raw key
               keySuffix,           // last 4 chars of raw key (for display only)
               active,              // boolean — false if revoked
@@ -413,7 +413,7 @@ Generates (or regenerates) the user's personal API key.
   1. Generate a cryptographically random 32-byte key, base64url-encoded → `rawKey`
   2. Compute `keyHash = SHA-256(rawKey)` (hex)
   3. Derive `keySuffix` = last 4 characters of `rawKey`
-  4. Write (or overwrite) `users/{userId}/apiKey` with `{ keyHash, keySuffix, active: true, createdAt: now, lastUsedAt: null }`
+  4. Write (or overwrite) `users/{userId}/apiKey/default` with `{ keyHash, keySuffix, active: true, createdAt: now, lastUsedAt: null }`
   5. Return `rawKey` to the caller — **this is the only time the raw key is ever transmitted**
 - **Response:**
 
@@ -430,7 +430,7 @@ Deactivates the user's API key without replacing it.
 - **Trigger:** `onCall` (authenticated)
 - **Input:** none
 - **Process:**
-  1. Update `users/{userId}/apiKey` → `{ active: false }`
+  1. Update `users/{userId}/apiKey/default` → `{ active: false }`
 - **Response:** `{ "success": true }`
 
 ### `getSnapshot` — Public HTTP GET
@@ -442,7 +442,7 @@ Returns today's weather summary and clothing suggestion for a user identified by
 - **Process:**
   1. Extract `key` query parameter; reject (401) if missing
   2. Compute `candidateHash = SHA-256(key)`
-  3. Query Firestore: find `users/{userId}/apiKey` where `keyHash == candidateHash` and `active == true`; reject (401) if not found
+  3. Query Firestore: `collectionGroup('apiKey').where('keyHash', '==', candidateHash).where('active', '==', true)`; reject (401) if no match (requires a composite index on `keyHash` + `active`)
   4. Update `lastUsedAt` on the matched document (non-blocking)
   5. Read `weatherCache/{today}` — return 503 with `{ "error": "weather_unavailable" }` if missing
   6. Read `users/{userId}/suggestions/{today}` — run `getDailySuggestion` logic inline if not cached
@@ -657,18 +657,18 @@ Important:
 - [ ] Handle edge cases — empty wardrobe, missing weather data, API failures
 - [ ] Deploy to production Firebase
 
-### Phase 5 — API Key Access
+### Phase 5 — API Key Access ✅
 
 **Goal:** Let users consume their daily snapshot from external tools via a single REST call.
 
-- [ ] Build `generateApiKey` Cloud Function — generate random key, store SHA-256 hash, return raw key once
-- [ ] Build `revokeApiKey` Cloud Function — set `active: false` on the user's key document
-- [ ] Build `getSnapshot` HTTP Cloud Function — validate API key hash, return combined weather + suggestion
-- [ ] Add Firestore security rules for `users/{userId}/apiKey` — owner read/write only
-- [ ] Build Account page (`/account`) in frontend — accessible via avatar click in the header
-- [ ] Account page: show key status (active / none), masked suffix, creation date
-- [ ] Account page: "Generate API key" / "Regenerate" button — show raw key once in a copy-to-clipboard dialog
-- [ ] Account page: "Revoke" button with confirmation dialog
+- [x] Build `generateApiKey` Cloud Function — generate random key, store SHA-256 hash, return raw key once
+- [x] Build `revokeApiKey` Cloud Function — set `active: false` on the user's key document
+- [x] Build `getSnapshot` HTTP Cloud Function — validate API key hash, return combined weather + suggestion
+- [x] Add Firestore security rules for `users/{userId}/apiKey/{doc}` — owner read/write only
+- [x] Build Account page (`/account`) in frontend — accessible via avatar click in the header
+- [x] Account page: show key status (active / none), masked suffix, creation date
+- [x] Account page: "Generate API key" / "Regenerate" button — show raw key once in a copy-to-clipboard dialog
+- [x] Account page: "Revoke" button with confirmation dialog
 - [ ] Document the `/snapshot` endpoint in README for external integrations
 
 ---
