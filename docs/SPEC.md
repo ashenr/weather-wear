@@ -68,10 +68,17 @@ graph LR
     YR[yr.no API]:::external
     GM[Gemini API]:::external
 
+    AK[Account / API Key]:::react
+
     %% SPA → Functions
     DB -->|Get suggestion| GDS
     AI -->|Extract from URL| CPU
     FB -->|Submit rating| SF
+    AK -->|Generate / revoke key| GAK
+
+    %% Public REST
+    EXT["External Client"]:::external -->|"GET /snapshot?key=..."|SNP
+    SNP["getSnapshot (HTTP)"]:::firebase
 
     %% Functions → External APIs
     FW -->|Fetch hourly forecast| YR
@@ -83,7 +90,17 @@ graph LR
     GDS -->|Read weather, wardrobe, feedback · Write suggestion| FS
     SF -->|Write feedback| FS
     WD -->|CRUD items| FS
+    GAK[generateApiKey]:::firebase -->|Write API key| FS
+    SNP -->|Validate key · Read weather + suggestion| FS
 ```
+
+**Data flow for public snapshot (API key access):**
+
+1. External client sends `GET /snapshot?key=<apiKey>`
+2. `getSnapshot` HTTP function looks up the hashed key across `apiKeys` documents
+3. Validates the key is active and resolves the owning `userId`
+4. Reads `weatherCache/{today}` and `users/{userId}/suggestions/{today}`
+5. Returns combined weather + suggestion payload (no wardrobe or feedback data is exposed)
 
 **Data flow for daily suggestion:**
 
@@ -226,6 +243,17 @@ This feedback is stored in Firestore and included in future Gemini prompts so th
 - Single-user app — the auth is primarily to secure access, not for multi-tenancy
 - Firestore security rules restrict user data to the authenticated user; weather cache is readable by any authenticated user
 
+### 6. API Key Access
+
+Users can generate a personal API key from the Account page (accessible by clicking their avatar). The key allows **thin clients** — such as e-ink displays (e.g., a Waveshare panel driven by a Raspberry Pi Zero), home-automation dashboards, or simple scripts — to consume today's weather and clothing suggestion via a single public REST endpoint without needing a browser, Firebase SDK, or OAuth flow.
+
+- **One key per user** — generating a new key immediately invalidates the previous one
+- The raw key is shown **once** in the UI immediately after generation; it is never stored in plain text
+- Keys are stored as a SHA-256 hash in Firestore under `users/{userId}/apiKey` (a single document, not a subcollection)
+- The `getSnapshot` HTTP function validates incoming keys by hashing the candidate and searching for a matching document
+- Users can also **revoke** their key without generating a replacement (setting `active: false`)
+- The Account page shows: current key status (active / none), masked key suffix (last 4 chars), creation date, and buttons to generate/regenerate or revoke
+
 ---
 
 ## Data Schema (Firestore)
@@ -277,14 +305,21 @@ users/{userId}
   │           },
   │           rawGeminiResponse }
   │
-  └── feedback/{date} (subcollection, doc ID e.g., "2026-03-01")
-        └── { date, submittedAt,
-              itemsWorn: [ itemId, itemId, ... ],
-              comfortRating,        // "too-cold" | "slightly-cold" |
-                                    // "just-right" | "slightly-warm" | "too-warm"
-              conditionType,        // Oslo Logic classification that day
-              weatherSummary,       // snapshot of weather that day
-              note }
+  ├── feedback/{date} (subcollection, doc ID e.g., "2026-03-01")
+  │     └── { date, submittedAt,
+  │           itemsWorn: [ itemId, itemId, ... ],
+  │           comfortRating,        // "too-cold" | "slightly-cold" |
+  │                                 // "just-right" | "slightly-warm" | "too-warm"
+  │           conditionType,        // Oslo Logic classification that day
+  │           weatherSummary,       // snapshot of weather that day
+  │           note }
+  │
+  └── apiKey (document — one per user, not a subcollection)
+        └── { keyHash,             // SHA-256 hex digest of the raw key
+              keySuffix,           // last 4 chars of raw key (for display only)
+              active,              // boolean — false if revoked
+              createdAt,
+              lastUsedAt }         // updated on each successful /snapshot call
 ```
 
 ---
@@ -367,6 +402,82 @@ Extracts clothing item data from a product page URL.
     "sourceUrl": "https://original-url.com/..."
   }
   ```
+
+### `generateApiKey` — Callable
+
+Generates (or regenerates) the user's personal API key.
+
+- **Trigger:** `onCall` (authenticated)
+- **Input:** none
+- **Process:**
+  1. Generate a cryptographically random 32-byte key, base64url-encoded → `rawKey`
+  2. Compute `keyHash = SHA-256(rawKey)` (hex)
+  3. Derive `keySuffix` = last 4 characters of `rawKey`
+  4. Write (or overwrite) `users/{userId}/apiKey` with `{ keyHash, keySuffix, active: true, createdAt: now, lastUsedAt: null }`
+  5. Return `rawKey` to the caller — **this is the only time the raw key is ever transmitted**
+- **Response:**
+
+  ```json
+  { "apiKey": "<rawKey>" }
+  ```
+
+- **Note:** Calling this function again replaces the previous key atomically. The old key stops working immediately.
+
+### `revokeApiKey` — Callable
+
+Deactivates the user's API key without replacing it.
+
+- **Trigger:** `onCall` (authenticated)
+- **Input:** none
+- **Process:**
+  1. Update `users/{userId}/apiKey` → `{ active: false }`
+- **Response:** `{ "success": true }`
+
+### `getSnapshot` — Public HTTP GET
+
+Returns today's weather summary and clothing suggestion for a user identified by their API key. This is the only unauthenticated endpoint; it is secured by the API key.
+
+- **Trigger:** `onRequest` (HTTP, unauthenticated — no Firebase Auth token required)
+- **URL:** `GET https://<region>-<project>.cloudfunctions.net/getSnapshot?key=<apiKey>`
+- **Process:**
+  1. Extract `key` query parameter; reject (401) if missing
+  2. Compute `candidateHash = SHA-256(key)`
+  3. Query Firestore: find `users/{userId}/apiKey` where `keyHash == candidateHash` and `active == true`; reject (401) if not found
+  4. Update `lastUsedAt` on the matched document (non-blocking)
+  5. Read `weatherCache/{today}` — return 503 with `{ "error": "weather_unavailable" }` if missing
+  6. Read `users/{userId}/suggestions/{today}` — run `getDailySuggestion` logic inline if not cached
+  7. Return combined payload
+- **Response:**
+
+  ```json
+  {
+    "date": "2026-03-01",
+    "weather": {
+      "conditionType": "wet-cold",
+      "windWarning": false,
+      "periods": {
+        "morning":   { "temp": -1, "feelsLike": -5, "precipitation": 0.4, "wind": 4.2, "symbol": "lightsnow" },
+        "daytime":  { "temp": 1,  "feelsLike": -2, "precipitation": 1.1, "wind": 5.0, "symbol": "sleet" },
+        "afternoon": { "temp": 2,  "feelsLike": -1, "precipitation": 0.2, "wind": 3.8, "symbol": "cloudy" },
+        "evening":  { "temp": 0,  "feelsLike": -3, "precipitation": 0.0, "wind": 2.1, "symbol": "clearsky_night" }
+      },
+      "summary": { "minTemp": -1, "maxTemp": 2, "totalPrecipitation": 1.7, "maxWind": 5.0 }
+    },
+    "suggestion": {
+      "baseLayer":    { "itemId": "...", "name": "Merino wool base", "reasoning": "..." },
+      "midLayer":     { "itemId": "...", "name": "Fleece jacket",    "reasoning": "..." },
+      "outerLayer":   { "itemId": "...", "name": "Gore-Tex shell",   "reasoning": "..." },
+      "accessories":  [{ "itemId": "...", "name": "Wool beanie",     "reasoning": "..." }],
+      "overallAdvice": "..."
+    }
+  }
+  ```
+
+- **Intended clients:** e-ink displays, Raspberry Pi scripts, home-automation platforms, or any environment where running a Firebase SDK is impractical. A typical e-ink device fetches the snapshot once in the morning via a cron job — the endpoint is deliberately read-only and returns only the data a display needs.
+- **Security notes:**
+  - Rate-limit by IP: max 60 requests/minute per IP (Cloud Armor or a simple Firestore counter)
+  - Never expose `keyHash`, wardrobe items, or feedback data in the response
+  - Use `timing-safe` comparison when checking the hash to prevent timing attacks (compare full SHA-256 digests, never short-circuit)
 
 ### `submitFeedback` — Callable
 
@@ -490,6 +601,7 @@ Important:
 | `/wardrobe/:id`   | Edit/view item detail                                             |
 | `/feedback`       | Submit today's feedback (what you wore + comfort rating)          |
 | `/login`          | Google sign-in                                                    |
+| `/account`        | Account page — API key management (generate, regenerate, revoke)  |
 
 ---
 
@@ -544,6 +656,20 @@ Important:
 - [ ] Add wardrobe category filters and search
 - [ ] Handle edge cases — empty wardrobe, missing weather data, API failures
 - [ ] Deploy to production Firebase
+
+### Phase 5 — API Key Access
+
+**Goal:** Let users consume their daily snapshot from external tools via a single REST call.
+
+- [ ] Build `generateApiKey` Cloud Function — generate random key, store SHA-256 hash, return raw key once
+- [ ] Build `revokeApiKey` Cloud Function — set `active: false` on the user's key document
+- [ ] Build `getSnapshot` HTTP Cloud Function — validate API key hash, return combined weather + suggestion
+- [ ] Add Firestore security rules for `users/{userId}/apiKey` — owner read/write only
+- [ ] Build Account page (`/account`) in frontend — accessible via avatar click in the header
+- [ ] Account page: show key status (active / none), masked suffix, creation date
+- [ ] Account page: "Generate API key" / "Regenerate" button — show raw key once in a copy-to-clipboard dialog
+- [ ] Account page: "Revoke" button with confirmation dialog
+- [ ] Document the `/snapshot` endpoint in README for external integrations
 
 ---
 

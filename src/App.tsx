@@ -9,6 +9,7 @@ import { WardrobePage } from './pages/WardrobePage'
 import { AddItemPage } from './pages/AddItemPage'
 import { ItemDetailPage } from './pages/ItemDetailPage'
 import { FeedbackPage } from './pages/FeedbackPage'
+import { AccountPage } from './pages/AccountPage'
 
 function App() {
   return (
@@ -62,6 +63,16 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <ErrorBoundary><FeedbackPage /></ErrorBoundary>
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/account"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ErrorBoundary><AccountPage /></ErrorBoundary>
                 </Layout>
               </ProtectedRoute>
             }
