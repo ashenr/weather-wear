@@ -54,9 +54,9 @@ describe('generateKeyMaterial', () => {
 
 // ── getSnapshot key validation — HTTP logic ────────────────────────────────────
 // These tests verify the key hashing and HTTP validation logic in isolation.
-// Full end-to-end validation (Firestore lookup, weather/suggestion fetching)
-// is covered by integration tests.
-
+// Full end-to-end validation (including Firestore lookup and weather/suggestion
+// fetching) would require separate integration tests, which are not part of
+// this unit test suite.
 describe('getSnapshot key hash validation', () => {
   it('candidate key hash matches stored hash for a known key', () => {
     const {rawKey, keyHash} = generateKeyMaterial()
