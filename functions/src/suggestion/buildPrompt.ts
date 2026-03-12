@@ -70,7 +70,7 @@ export function buildSuggestionPrompt(
   const wardrobeSection = wardrobe
     .map((item) =>
       JSON.stringify({
-        id: item.id,
+        itemId: item.id,
         name: item.name,
         category: item.category,
         warmthLevel: item.warmthLevel,

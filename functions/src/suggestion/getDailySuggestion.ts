@@ -81,6 +81,7 @@ export const getDailySuggestion = onCall(
       ...(d.data() as Omit<WardrobeItemDoc, 'id'>),
     }))
     const wardrobeIds = new Set(wardrobe.map((w) => w.id))
+    const wardrobeByName = new Map(wardrobe.map((w) => [w.name.toLowerCase(), w.id]))
 
     // 4. Read recent feedback (last 14 days)
     const cutoff = getDateNDaysAgo(14)
@@ -124,14 +125,14 @@ export const getDailySuggestion = onCall(
 
     try {
       rawResponse = await callGemini(prompt)
-      suggestionData = parseAndValidate(JSON.parse(rawResponse), wardrobeIds)
+      suggestionData = parseAndValidate(JSON.parse(rawResponse), wardrobeIds, wardrobeByName)
     } catch (firstErr) {
       logger.warn('First Gemini attempt failed, retrying with stricter prompt', firstErr)
       try {
         const strictPrompt =
           prompt + '\n\nCRITICAL: You MUST return ONLY valid JSON. No markdown, no code blocks.'
         rawResponse = await callGemini(strictPrompt)
-        suggestionData = parseAndValidate(JSON.parse(rawResponse), wardrobeIds)
+        suggestionData = parseAndValidate(JSON.parse(rawResponse), wardrobeIds, wardrobeByName)
       } catch (secondErr) {
         logger.error('Gemini retry failed — using fallback', secondErr)
         isFallback = true

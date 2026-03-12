@@ -110,7 +110,7 @@ describe('buildSuggestionPrompt', () => {
 
   it('includes wardrobe item id in the prompt', () => {
     const prompt = buildSuggestionPrompt(weather, wardrobe, [])
-    expect(prompt).toContain('"id":"jacket-1"')
+    expect(prompt).toContain('"itemId":"jacket-1"')
   })
 
   it('shows no-feedback message when feedback is empty', () => {
