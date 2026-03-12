@@ -96,7 +96,7 @@ graph LR
 
 **Data flow for public snapshot (API key access):**
 
-1. External client sends `GET /snapshot?key=<apiKey>`
+1. External client sends `GET /getSnapshot?key=<apiKey>`
 2. `getSnapshot` HTTP function looks up the hashed key across `apiKeys` documents
 3. Validates the key is active and resolves the owning `userId`
 4. Reads `weatherCache/{today}` and `users/{userId}/suggestions/{today}`
