@@ -10,10 +10,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // API key document — owner read/write only; never readable by other users.
-    // keyHash is stored here but never returned to the frontend via callable functions.
+    // API key subcollection — no direct client reads; write access is not needed either
+    // since all mutations go through Cloud Functions (Admin SDK).
+    // keyHash must never be exposed to the frontend; the getApiKeyStatus callable
+    // returns only display-safe fields (status, keySuffix, timestamps).
     match /users/{userId}/apiKey/{doc} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if false;
     }
 
     // Users can only access their own data.

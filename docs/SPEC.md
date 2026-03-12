@@ -251,6 +251,7 @@ Users can generate a personal API key from the Account page (accessible by click
 - The raw key is shown **once** in the UI immediately after generation; it is never stored in plain text
 - Keys are stored as a SHA-256 hash in Firestore at `users/{userId}/apiKey/default` (a subcollection with a fixed document ID, enabling cross-user `collectionGroup` queries in `getSnapshot`)
 - The `getSnapshot` HTTP function validates incoming keys by hashing the candidate and searching for a matching document
+- `keyHash` is server-only — Firestore rules deny all direct client reads of the `apiKey` subcollection; the Account page loads key status via the `getApiKeyStatus` callable, which returns only display-safe fields (`status`, `keySuffix`, `createdAt`, `lastUsedAt`)
 - Users can also **revoke** their key without generating a replacement (setting `active: false`)
 - The Account page shows: current key status (active / none), masked key suffix (last 4 chars), creation date, and buttons to generate/regenerate or revoke
 
@@ -403,6 +404,25 @@ Extracts clothing item data from a product page URL.
   }
   ```
 
+### `getApiKeyStatus` — Callable
+
+Returns the display-safe status of the user's API key without exposing `keyHash`.
+
+- **Trigger:** `onCall` (authenticated)
+- **Input:** none
+- **Process:**
+  1. Read `users/{userId}/apiKey/default`
+  2. If document does not exist, return `{ status: 'none' }`
+  3. Return only display-safe fields — `keyHash` is intentionally omitted
+- **Response:**
+
+  ```json
+  { "status": "active", "keySuffix": "xZ3q", "createdAt": 1741776000000, "lastUsedAt": null }
+  ```
+  or `{ "status": "none" }` / `{ "status": "revoked", ... }`
+
+---
+
 ### `generateApiKey` — Callable
 
 Generates (or regenerates) the user's personal API key.
@@ -432,6 +452,8 @@ Deactivates the user's API key without replacing it.
 - **Process:**
   1. Update `users/{userId}/apiKey/default` → `{ active: false }`
 - **Response:** `{ "success": true }`
+
+**Note:** All three key-management callables (`getApiKeyStatus`, `generateApiKey`, `revokeApiKey`) access Firestore via the Admin SDK. Firestore security rules deny all direct client reads and writes of the `apiKey` subcollection — `keyHash` is therefore never reachable from the browser.
 
 ### `getSnapshot` — Public HTTP GET
 
@@ -663,8 +685,9 @@ Important:
 
 - [x] Build `generateApiKey` Cloud Function — generate random key, store SHA-256 hash, return raw key once
 - [x] Build `revokeApiKey` Cloud Function — set `active: false` on the user's key document
+- [x] Build `getApiKeyStatus` Cloud Function — return display-safe status fields; `keyHash` never leaves the server
 - [x] Build `getSnapshot` HTTP Cloud Function — validate API key hash, return combined weather + suggestion
-- [x] Add Firestore security rules for `users/{userId}/apiKey/{doc}` — owner read/write only
+- [x] Add Firestore security rules for `users/{userId}/apiKey/{doc}` — deny all direct client reads/writes (all access via Admin SDK callables)
 - [x] Build Account page (`/account`) in frontend — accessible via avatar click in the header
 - [x] Account page: show key status (active / none), masked suffix, creation date
 - [x] Account page: "Generate API key" / "Regenerate" button — show raw key once in a copy-to-clipboard dialog

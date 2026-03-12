@@ -1,6 +1,4 @@
 import { useEffect, useState } from 'react'
-import { doc, getDoc } from 'firebase/firestore'
-import { Timestamp } from 'firebase/firestore'
 import {
   Badge,
   Box,
@@ -18,17 +16,13 @@ import {
   Text,
   VStack,
 } from '@chakra-ui/react'
-import { db } from '../lib/firebase'
-import { generateApiKey, revokeApiKey } from '../lib/apiKey'
+import { generateApiKey, getApiKeyStatus, revokeApiKey } from '../lib/apiKey'
+import type { ApiKeyStatus } from '../lib/apiKey'
 import { useAuth } from '../contexts/AuthContext'
 import { toaster } from '../components/ui/toaster'
 
-interface ApiKeyState {
-  status: 'none' | 'active' | 'revoked'
-  keySuffix?: string
-  createdAt?: Date
-  lastUsedAt?: Date | null
-}
+type ApiKeyState = ApiKeyStatus
+
 
 function formatDateTime(date: Date): string {
   return date.toLocaleString('en-GB', {
@@ -65,18 +59,8 @@ export function AccountPage() {
     if (!user) return
     setLoading(true)
     try {
-      const snap = await getDoc(doc(db, 'users', user.uid, 'apiKey', 'default'))
-      if (!snap.exists()) {
-        setKeyState({ status: 'none' })
-      } else {
-        const data = snap.data()
-        setKeyState({
-          status: data['active'] ? 'active' : 'revoked',
-          keySuffix: data['keySuffix'] as string,
-          createdAt: data['createdAt'] instanceof Timestamp ? data['createdAt'].toDate() : undefined,
-          lastUsedAt: data['lastUsedAt'] instanceof Timestamp ? data['lastUsedAt'].toDate() : null,
-        })
-      }
+      const status = await getApiKeyStatus()
+      setKeyState(status)
     } catch {
       toaster.create({ type: 'error', title: 'Failed to load API key status' })
       setKeyState({ status: 'none' })

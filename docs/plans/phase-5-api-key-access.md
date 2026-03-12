@@ -34,7 +34,7 @@ export const generateApiKey = onCall(
 - Derive `keySuffix` = last 4 characters of `rawKey` (for display in the UI)
 
 ### 1b. Firestore write
-- Write (or overwrite) `users/{userId}/apiKey` document:
+- Write (or overwrite) `users/{userId}/apiKey/default` document:
   ```typescript
   {
     keyHash: string;       // SHA-256 hex digest — never the raw key
@@ -44,7 +44,7 @@ export const generateApiKey = onCall(
     lastUsedAt: null;
   }
   ```
-- This is a single document, not a subcollection — overwriting it atomically invalidates the previous key
+- The key is stored as a fixed-ID document (`default`) inside an `apiKey` subcollection. Using a subcollection (rather than a field on the user document) allows `getSnapshot` to perform a `collectionGroup('apiKey')` query across all users to resolve an incoming key hash to a `userId`. Overwriting the `default` document atomically invalidates the previous key.
 
 ### 1c. Response
 - Return `{ apiKey: rawKey }` to the caller
@@ -75,7 +75,7 @@ export const revokeApiKey = onCall(
 **Implementation details:**
 
 - Reject unauthenticated calls
-- Update `users/{userId}/apiKey` → `{ active: false }` using Firestore `update()` (not `set()` — preserve all other fields)
+- Update `users/{userId}/apiKey/default` → `{ active: false }` using Firestore `update()` (not `set()` — preserve all other fields)
 - If the document doesn't exist (no key was ever generated), return `{ success: true }` silently — not an error
 - Response: `{ success: true }`
 
@@ -104,10 +104,10 @@ export const getSnapshot = onRequest(
 ### 3a. Key validation
 1. Extract `key` query parameter — return `401` with `{ "error": "missing_key" }` if absent or empty
 2. Compute `candidateHash = crypto.createHash('sha256').update(key).digest('hex')`
-3. Query Firestore: find a document in `users/*/apiKey` where `keyHash == candidateHash` AND `active == true`
-   - Use a Firestore collection group query across all `apiKey` documents
+3. Query Firestore: `collectionGroup('apiKey').where('keyHash', '==', candidateHash).where('active', '==', true)`
+   - This queries across all `users/{userId}/apiKey/default` documents; requires a composite Firestore index on `keyHash` + `active`
    - Return `401` with `{ "error": "invalid_key" }` if no match found
-4. Extract `userId` from the matched document's path (`path.split('/')[1]`)
+4. Extract `userId` from the matched document's reference path (segment index 1: `doc.ref.path.split('/')[1]`)
 5. Update `lastUsedAt` on the matched document non-blocking (do not `await` — don't slow the response)
 
 ### 3b. Timing-safe key comparison
@@ -164,23 +164,26 @@ export const getSnapshot = onRequest(
 
 ## Step 4: Firestore Security Rules
 
-**What:** Add rules for the new `apiKey` document. The `getSnapshot` function uses the Admin SDK and bypasses client rules, but the callable functions are invoked as the authenticated user.
+**What:** Lock down the `apiKey` subcollection so `keyHash` is never reachable from the browser. All reads and writes go through Cloud Functions (Admin SDK), which bypasses security rules entirely.
 
 **Files to modify:**
 - `firestore.rules`
 
 **Rules to add:**
 ```
-// API key document — owner read/write only; never readable by other users
-match /users/{userId}/apiKey {
-  allow read, write: if request.auth != null && request.auth.uid == userId;
+// API key subcollection — no direct client reads or writes.
+// All access is via Cloud Functions (Admin SDK).
+// keyHash must never be exposed to the frontend; use the getApiKeyStatus
+// callable to retrieve display-safe fields (status, keySuffix, timestamps).
+match /users/{userId}/apiKey/{doc} {
+  allow read, write: if false;
 }
 ```
 
 **Notes:**
-- The `getSnapshot` function uses the Admin SDK, so it can query across all `users/*/apiKey` documents regardless of these rules
-- Clients should only be able to read their own `apiKey` document (to check status/suffix — never the hash)
-- The `keyHash` field must never be returned to the frontend; the frontend callable functions (`generateApiKey`, `revokeApiKey`) only return `apiKey` (raw key, once) or `{ success: true }`, not the hash
+- All three key-management callables (`getApiKeyStatus`, `generateApiKey`, `revokeApiKey`) and `getSnapshot` use the Admin SDK — they are unaffected by this rule
+- The `getApiKeyStatus` callable is the only way the frontend reads key state; it explicitly omits `keyHash` from its response
+- Denying client reads entirely (rather than allowing them with field-level filtering) is the stronger guarantee — Firestore has no native field-level read restrictions
 
 ---
 
@@ -196,12 +199,25 @@ match /users/{userId}/apiKey {
 
 ### 5a. `src/lib/apiKey.ts`
 
-Thin wrappers around the callable functions:
+Thin wrappers around the callable functions. `AccountPage` must **not** read the `apiKey` Firestore document directly — use `getApiKeyStatus()` instead so `keyHash` never reaches the browser.
 
 ```typescript
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from './firebase';
 
-const functions = getFunctions(undefined, 'europe-west1');
+export interface ApiKeyStatus {
+  status: 'none' | 'active' | 'revoked';
+  keySuffix?: string;
+  createdAt?: Date;
+  lastUsedAt?: Date | null;
+}
+
+export async function getApiKeyStatus(): Promise<ApiKeyStatus> {
+  const fn = httpsCallable<void, ...>(functions, 'getApiKeyStatus');
+  const result = await fn();
+  // convert millisecond timestamps to Date objects
+  ...
+}
 
 export async function generateApiKey(): Promise<string> {
   const fn = httpsCallable<void, { apiKey: string }>(functions, 'generateApiKey');
@@ -289,8 +305,9 @@ The page has three states:
 - [x] `getSnapshot` returns correct weather + suggestion JSON for a valid key
 - [ ] `getSnapshot` returns `suggestion: null` with `suggestionError` if wardrobe is empty (not a 500)
 - [ ] `getSnapshot` returns 503 if `weatherCache/{today}` is missing
-- [ ] Firestore rules prevent users from reading each other's `apiKey` documents
-- [x] `keyHash` is never sent to the frontend
+- [x] Firestore rules deny all direct client reads/writes of `apiKey` — no user can read any `apiKey` document directly (including their own)
+- [x] `keyHash` is never sent to the frontend — Firestore rules deny direct client reads of `apiKey`; `getApiKeyStatus` callable omits it explicitly
+- [x] Account page loads key state via `getApiKeyStatus` callable (no direct Firestore reads)
 - [x] Account page shows correct state: none / active / revoked
 - [x] Raw key is shown exactly once in a copy-to-clipboard dialog after generation
 - [x] Regenerate confirmation dialog is shown before overwriting an active key

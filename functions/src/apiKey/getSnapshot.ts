@@ -157,7 +157,12 @@ export const getSnapshot = onRequest(
     }
 
     const keyDoc = keySnap.docs[0]
-    const userId = keyDoc.ref.path.split('/')[1]
+    const userId = keyDoc.ref.parent.parent?.id
+    if (!userId) {
+      logger.error('getSnapshot: apiKey document has unexpected path', keyDoc.ref.path)
+      res.status(500).json({error: 'internal_error'})
+      return
+    }
 
     // Non-blocking lastUsedAt update
     keyDoc.ref.update({lastUsedAt: FieldValue.serverTimestamp()}).catch((err) => {
