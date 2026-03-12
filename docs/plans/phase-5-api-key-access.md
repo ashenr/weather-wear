@@ -300,7 +300,7 @@ The page has three states:
 
 - [x] `generateApiKey` returns a base64url key and stores only the SHA-256 hash in Firestore
 - [x] Calling `generateApiKey` twice invalidates the first key (old hash is replaced)
-- [x] `revokeApiKey` sets `active: false`; subsequent `/snapshot` calls with the old key return 401
+- [x] `revokeApiKey` sets `active: false`; subsequent `/getSnapshot` calls with the old key return 401
 - [x] `getSnapshot` returns 401 for missing, invalid, and revoked keys
 - [x] `getSnapshot` returns correct weather + suggestion JSON for a valid key
 - [ ] `getSnapshot` returns `suggestion: null` with `suggestionError` if wardrobe is empty (not a 500)
