@@ -278,7 +278,7 @@ export function LoginPage() {
             {error && <Field.ErrorText>{error}</Field.ErrorText>}
           </Field.Root>
           <Button variant="ghost" size="sm" onClick={() => { setConfirmationResult(null); setOtpValue([]); setError('') }}>
-            Resend code
+            Start over
           </Button>
         </VStack>
       )}
