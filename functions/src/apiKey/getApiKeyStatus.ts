@@ -6,6 +6,15 @@ export type ApiKeyStatusResponse =
   | {status: 'none'}
   | {status: 'active' | 'revoked'; keySuffix: string; createdAt: number; lastUsedAt: number | null}
 
+export function mapApiKeyDoc(data: ApiKeyDoc): Extract<ApiKeyStatusResponse, {status: 'active' | 'revoked'}> {
+  return {
+    status: data.active ? 'active' : 'revoked',
+    keySuffix: data.keySuffix,
+    createdAt: data.createdAt.toMillis(),
+    lastUsedAt: data.lastUsedAt ? data.lastUsedAt.toMillis() : null,
+  }
+}
+
 export const getApiKeyStatus = onCall(
   {region: 'europe-west1'},
   async (request): Promise<ApiKeyStatusResponse> => {
@@ -22,11 +31,6 @@ export const getApiKeyStatus = onCall(
 
     const data = snap.data() as ApiKeyDoc
     // Return only display-safe fields — keyHash is intentionally omitted
-    return {
-      status: data.active ? 'active' : 'revoked',
-      keySuffix: data.keySuffix,
-      createdAt: data.createdAt.toMillis(),
-      lastUsedAt: data.lastUsedAt ? data.lastUsedAt.toMillis() : null,
-    }
+    return mapApiKeyDoc(data)
   }
 )
