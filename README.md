@@ -25,6 +25,7 @@ The same **-5°C** can feel completely different depending on moisture and wind 
 - 📸 **Lazy Onboarding via Product URLs** — Add items to your wardrobe simply by pasting a product URL (e.g. Zalando, Norrøna, Uniqlo). The app auto-extracts name, material, warmth level, and weather resistance using AI.
 - 🔄 **Feedback & Learning Loop** — Log what you wore and rate your comfort. The AI learns your personal temperature tolerance over time and calibrates future suggestions accordingly.
 - 🔐 **Secure & Personal** — Google sign-in via Firebase Auth. Your wardrobe data is private and secured with Firestore rules.
+- 📡 **Thin Client / External Access** — Generate a personal API key from the Account page and pull today's weather + suggestion via a single `GET /snapshot?key=<apiKey>` REST call — no browser, Firebase SDK, or OAuth flow needed. Perfect for e-ink displays, Raspberry Pi dashboards, or home-automation scripts.
 
 ---
 
@@ -79,6 +80,7 @@ graph LR
         DB[Dashboard]:::react
         WD[Wardrobe]:::react
         FB[Feedback]:::react
+        AK[Account / API Key]:::react
     end
 
     %% Cloud Functions
@@ -87,6 +89,10 @@ graph LR
         FW["fetchWeather (scheduled)"]:::firebase
         CPU[crawlProductUrl]:::firebase
         SF[submitFeedback]:::firebase
+        GAK[generateApiKey]:::firebase
+        RAK[revokeApiKey]:::firebase
+        AKS[getApiKeyStatus]:::firebase
+        SNP["getSnapshot (HTTP)"]:::firebase
     end
 
     %% Storage & Externals
@@ -98,6 +104,12 @@ graph LR
     DB -->|Get suggestion| GDS
     WD -->|Add via URL| CPU
     FB -->|Log comfort| SF
+    AK -->|Generate key| GAK
+    AK -->|Revoke key| RAK
+    AK -->|Check key status| AKS
+
+    %% Public REST
+    EXT["External Client"]:::external -->|"GET /snapshot?key=..."| SNP
 
     %% Functions → External
     FW -->|Fetch forecast| YR
@@ -108,12 +120,17 @@ graph LR
     FW -->|Cache weather| FS
     GDS -->|Read & write| FS
     SF -->|Save feedback| FS
+    GAK -->|Write API key hash| FS
+    RAK -->|Set active: false| FS
+    AKS -->|Read key metadata| FS
+    SNP -->|Validate key · Read weather + suggestion| FS
 ```
 
 **How it works:**
 1. A scheduled function fetches the hourly forecast from yr.no → aggregates into time periods → classifies with "Oslo Logic" → caches in Firestore.
 2. User opens the app → `getDailySuggestion` reads weather + wardrobe + feedback history → builds a structured prompt → Gemini returns a personalized layering recommendation.
 3. User can optionally submit comfort feedback to improve future suggestions.
+4. Users can generate a personal API key from the Account page and access today's data from any HTTP client via `GET /snapshot?key=<apiKey>`.
 
 ---
 
@@ -189,6 +206,69 @@ npm run test:coverage
 
 ---
 
-## 📄 License
+## � External API — `/snapshot` Endpoint
+
+WeatherWear exposes a single public REST endpoint for thin clients (e-ink displays, Raspberry Pi scripts, home-automation dashboards, etc.).
+
+### Generate an API key
+
+1. Sign in to the web app and click your avatar (top right) to open the **Account** page.
+2. Click **Generate API key**.
+3. Copy the key from the dialog — it is shown **once only** and never stored in plain text.
+
+### Request
+
+```
+GET https://europe-west1-<your-project>.cloudfunctions.net/getSnapshot?key=<apiKey>
+```
+
+### Response
+
+```json
+{
+  "date": "2026-03-13",
+  "weather": {
+    "conditionType": "wet-cold",
+    "windWarning": false,
+    "periods": {
+      "morning":   { "temp": -1, "feelsLike": -5, "precipitation": 0.4, "wind": 4.2, "symbol": "lightsnow" },
+      "daytime":   { "temp": 1,  "feelsLike": -2, "precipitation": 1.1, "wind": 5.0, "symbol": "sleet" },
+      "afternoon": { "temp": 2,  "feelsLike": -1, "precipitation": 0.2, "wind": 3.8, "symbol": "cloudy" },
+      "evening":   { "temp": 0,  "feelsLike": -3, "precipitation": 0.0, "wind": 2.1, "symbol": "clearsky_night" }
+    },
+    "summary": { "minTemp": -1, "maxTemp": 2, "totalPrecipitation": 1.7, "maxWind": 5.0 }
+  },
+  "suggestion": {
+    "baseLayer":   { "itemId": "...", "name": "Merino wool base",  "reasoning": "..." },
+    "midLayer":    { "itemId": "...", "name": "Fleece jacket",     "reasoning": "..." },
+    "outerLayer":  { "itemId": "...", "name": "Gore-Tex shell",    "reasoning": "..." },
+    "accessories": [{ "itemId": "...", "name": "Wool beanie",      "reasoning": "..." }],
+    "overallAdvice": "..."
+  }
+}
+```
+
+If the clothing suggestion could not be generated (e.g. empty wardrobe), `suggestion` will be `null` and a `suggestionError` field will explain why. Weather data is always included.
+
+### Error responses
+
+| Status | Body | Reason |
+|--------|------|--------|
+| `401` | `{ "error": "missing_key" }` | No `key` query parameter |
+| `401` | `{ "error": "invalid_key" }` | Key not found or revoked |
+| `503` | `{ "error": "weather_unavailable" }` | Weather not yet cached for today |
+| `405` | — | Non-GET request |
+
+### Example — Raspberry Pi cron job
+
+```bash
+# /etc/cron.d/weatherwear  (runs at 07:00 every day)
+0 7 * * * pi curl -sf "https://europe-west1-<project>.cloudfunctions.net/getSnapshot?key=<apiKey>" \
+  | jq '.suggestion.overallAdvice' > /tmp/weatherwear.txt
+```
+
+---
+
+## �📄 License
 
 This project is licensed under the [MIT License](LICENSE).
