@@ -61,7 +61,8 @@ export function AuthProvider({ children }: React.PropsWithChildren) {
   }
 
   const sendEmailSignInLink = async (email: string) => {
-    await sendSignInLinkToEmail(auth, email, {
+    const normalizedEmail = email.trim().toLowerCase()
+    await sendSignInLinkToEmail(auth, normalizedEmail, {
       // After clicking the link, the user lands back here.
       // window.location.origin works for both dev (localhost:5173) and production.
       url: window.location.origin + '/login',
@@ -69,7 +70,7 @@ export function AuthProvider({ children }: React.PropsWithChildren) {
     })
     // Save the email so we can retrieve it when the user returns via the link.
     // localStorage persists across page loads in the same browser/device.
-    window.localStorage.setItem('emailForSignIn', email)
+    window.localStorage.setItem('emailForSignIn', normalizedEmail)
   }
 
   const signInWithPhone = (phone: string, appVerifier: RecaptchaVerifier): Promise<ConfirmationResult> => {

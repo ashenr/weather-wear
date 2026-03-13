@@ -77,7 +77,8 @@ export function LoginPage() {
   const handleEmailSubmit = async (e: { preventDefault(): void }) => {
     e.preventDefault()
     setError('')
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    const normalizedEmail = email.trim().toLowerCase()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
       setError('Please enter a valid email address.')
       return
     }
@@ -86,10 +87,10 @@ export function LoginPage() {
       if (needsEmailForLink) {
         // Complete the sign-in: the user re-entered their email after opening
         // the link in a different browser where localStorage had no email.
-        await signInWithEmailLink(auth, email, window.location.href)
+        await signInWithEmailLink(auth, normalizedEmail, window.location.href)
         window.localStorage.removeItem('emailForSignIn')
       } else {
-        await sendEmailSignInLink(email)
+        await sendEmailSignInLink(normalizedEmail)
         setEmailSent(true)
       }
     } catch (err) {
