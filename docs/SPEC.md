@@ -53,6 +53,7 @@ graph LR
         AI["Add Item (URL/Manual)"]:::react
         FB[Feedback]:::react
         LG["Login (Google)"]:::react
+        AK[Account / API Key]:::react
     end
 
     %% Cloud Functions
@@ -61,6 +62,10 @@ graph LR
         FW["fetchWeather (Scheduled)"]:::firebase
         CPU[crawlProductUrl]:::firebase
         SF[submitFeedback]:::firebase
+        GAK[generateApiKey]:::firebase
+        RAK[revokeApiKey]:::firebase
+        AKS[getApiKeyStatus]:::firebase
+        SNP["getSnapshot (HTTP)"]:::firebase
     end
 
     %% Storage & Externals
@@ -68,17 +73,16 @@ graph LR
     YR[yr.no API]:::external
     GM[Gemini API]:::external
 
-    AK[Account / API Key]:::react
-
     %% SPA → Functions
     DB -->|Get suggestion| GDS
     AI -->|Extract from URL| CPU
     FB -->|Submit rating| SF
-    AK -->|Generate / revoke key| GAK
+    AK -->|Generate key| GAK
+    AK -->|Revoke key| RAK
+    AK -->|Check key status| AKS
 
     %% Public REST
-    EXT["External Client"]:::external -->|"GET /snapshot?key=..."|SNP
-    SNP["getSnapshot (HTTP)"]:::firebase
+    EXT["External Client"]:::external -->|"GET /snapshot?key=..."| SNP
 
     %% Functions → External APIs
     FW -->|Fetch hourly forecast| YR
@@ -90,7 +94,9 @@ graph LR
     GDS -->|Read weather, wardrobe, feedback · Write suggestion| FS
     SF -->|Write feedback| FS
     WD -->|CRUD items| FS
-    GAK[generateApiKey]:::firebase -->|Write API key| FS
+    GAK -->|Write API key| FS
+    RAK -->|Update active: false| FS
+    AKS -->|Read API key metadata| FS
     SNP -->|Validate key · Read weather + suggestion| FS
 ```
 
@@ -322,6 +328,49 @@ users/{userId}
               createdAt,
               lastUsedAt }         // updated on each successful /snapshot call
 ```
+
+---
+
+## Firestore Security Rules
+
+```
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Weather cache — written by Cloud Functions (Admin SDK); read-only for authenticated users.
+    match /weatherCache/{date} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // API key subcollection — deny all direct client reads and writes.
+    // All mutations go through Cloud Functions (Admin SDK), which bypasses security rules.
+    // keyHash must never reach the browser; use the getApiKeyStatus callable instead.
+    match /users/{userId}/apiKey/{doc} {
+      allow read, write: if false;
+    }
+
+    // All other user data — scoped to the authenticated owner.
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
+```
+
+> **Important — rule overlap:** Firestore grants access when *any* matching `allow` rule evaluates to true (OR logic across all matching rules). The `allow read, write: if false` on the `apiKey` path does **not** prevent an authenticated user from reading their own `apiKey` document via the broader `{document=**}` wildcard. The real protection is at the application layer: the `getApiKeyStatus` callable is the only legitimate frontend path to read key metadata, and it explicitly omits `keyHash`. Even if a client bypassed the callable and read the document directly, they would only see the SHA-256 hash — which cannot be reversed to recover the original key.
+
+## Firestore Indexes
+
+The `getSnapshot` function performs a `collectionGroup('apiKey')` query filtered by `keyHash` and `active`. This requires a composite index:
+
+| Collection group | Field | Order | Query scope |
+|-----------------|-------|-------|-------------|
+| `apiKey` | `keyHash` | Ascending | Collection group |
+| `apiKey` | `active` | Ascending | Collection group |
+
+The index is **not pre-defined** in `firestore.indexes.json`. When first deploying `getSnapshot`, Firestore will return an error containing a direct link to create the index in the Firebase console. Follow that link and wait for the index to build (~1–2 minutes) before testing the endpoint.
 
 ---
 
